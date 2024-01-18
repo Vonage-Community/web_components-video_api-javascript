@@ -1,0 +1,35 @@
+{
+  "name": "@vonage/white-board",
+  "description": "white-board Web Component to be used with Video API following open-wc recommendations",
+  "homepage": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/white-board#readme",
+  "repository": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/white-board",
+  "license": "MIT",
+  "author": "Vonage",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.js",
+  "module": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./white-board.js": "./white-board.js"
+  },
+  "scripts": {
+    "analyze": "cem analyze --litelement",
+    "start": "web-dev-server",
+    "test": "web-test-runner --coverage",
+    "test:watch": "web-test-runner --watch",
+    "storybook": "npm run analyze -- --exclude dist && web-dev-server -c .storybook/server.mjs",
+    "storybook:build": "npm run analyze -- --exclude dist && build-storybook"
+  },
+  "dependencies": {
+    "lit": "^2.3.1"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.4.17",
+    "@open-wc/testing": "^3.1.6",
+    "@web/dev-server": "^0.1.34",
+    "@web/dev-server-storybook": "^0.0.2",
+    "@web/test-runner": "^0.14.0"
+  },
+  "customElements": "custom-elements.json"
+}

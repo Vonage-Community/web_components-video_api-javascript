@@ -2,7 +2,7 @@
 
 ## About this project
 
-A set of Web Components to be used with the [Vonage Video SDK]([https://tokbox.com/developer/sdks/js/](https://developer.vonage.com/en/video/overview)).
+A set of Web Components to be used with the [Vonage Video SDK](https://developer.vonage.com/en/video/overview).
 
 ## Installation Guide
 
