@@ -58,7 +58,8 @@ h1 {
   width: 100%;
 }
 
-video-publisher {
+video-publisher,
+video-subscriber {
   display: block;
   aspect-ratio: 16/9;
 }
@@ -71,6 +72,33 @@ video-subscribers {
 
 screen-share::part(button) {
   font-size: 20px;
+  color: white;
+  background-color: black;
+  border-radius: 5px;
+}
+
+#camera {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  place-items: center;
+  width: 70vw;
+}
+
+#camera video-subscriber {
+  max-width: 300px;
+}
+
+dialog {
+  max-width: 1250px;
+}
+
+#custom,
+#screen {
+  width: 100%;
+}
+
+white-board::part(tools button) {
+  font-size: 10px;
   color: white;
   background-color: black;
   border-radius: 5px;

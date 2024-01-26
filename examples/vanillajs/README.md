@@ -1,6 +1,6 @@
 # Vanilla JS x Video API Web Components
 
-This demo was created with [Stackblitz's Static Starter App](https://stackblitz.com/fork/web-platform) to create a barebones application to focus on integrating the Web Components.
+This demo was created with [Stackblitz's Static Starter App](https://stackblitz.com/fork/web-platform) to create a barebones applications to focus on integrating the Web Components.
 
 Deployed application:
 
@@ -12,7 +12,10 @@ Deployed application:
 
 - `<video-publisher>` : Initializes a publisher and publishes to the session. [more info](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/video-publisher)
 - `<video-subscribers>` : Subscribes and displays other streams in the session. [more info](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/video-subscribers)
+- `<video-subscriber>` : Subscribes and displays an individual stream in the session. [more info](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/video-subscriber)
 - `<screen-share>` : Adds ability to allow user to share their screen. [more info](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/screen-share)
+- `<inputs-select>` : Select video and audio inputs for the < video-publisher >. [more info](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/inputs-select)
+- `<white-board>` : Adds ability for publisher to display a whiteboard to the session. [more info](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/white-board)
 
 ## How to use
 

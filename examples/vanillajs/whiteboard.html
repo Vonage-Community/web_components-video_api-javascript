@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Basic Video Call with Whiteboard" />
+    <title>Basic Video Call with Whiteboard</title>
+
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/styles.css" />
+
+    <!-- Load Vonage Video Client SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@vonage/client-sdk-video@latest/dist/js/opentok.min.js"></script>
+
+    <!-- Load Web Components-->
+    <script
+      type="module"
+      src="https://unpkg.com/@vonage/video-publisher@latest/video-publisher.js?module"
+    ></script>
+    <script
+      type="module"
+      src="https://unpkg.com/@vonage/video-subscriber@latest/video-subscriber.js?module"
+    ></script>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/@vonage/white-board@latest/white-board.js/+esm"
+    ></script>
+
+    <script src="/script.js" defer></script>
+  </head>
+  <body>
+    <a href="/">back</a>
+    <header>
+      <h1>Basic Video Call with Whiteboard</h1>
+    </header>
+    <main id="video-chat-container">
+      <section id="publisher-container">
+        <fieldset>
+          <legend>Publisher</legend>
+          <video-publisher></video-publisher>
+        </fieldset>
+        <button id="video-toggle">toggle Video</button>
+        <button id="audio-toggle">toggle Audio</button>
+        <br /><br />
+        <button id="whiteboard-button">open whiteboard</button>
+      </section>
+      <section id="video-subscriber-container">
+        <div id="custom"></div>
+        <div id="camera"></div>
+      </section>
+    </main>
+    <dialog id="whiteboard-dialog">
+      <form method="dialog">
+        <button>close</button>
+      </form>
+      <white-board />
+      <!-- <white-board text='{"tools": "tools!!!", "pen":"Pencil"}' /> -->
+    </dialog>
+  </body>
+</html>
