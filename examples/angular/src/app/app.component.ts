@@ -47,7 +47,7 @@ export class AppComponent implements OnInit, AfterViewInit {
   }
   
   ngAfterViewInit() {
-    console.log('ngAfterViewInit');
+    // Initialize a Vonage Video Session object
     this.session = this.OT.initSession(this.applicationId, this.sessionId);
   }
   
