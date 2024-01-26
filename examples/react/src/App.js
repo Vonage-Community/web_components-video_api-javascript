@@ -26,7 +26,7 @@ function App() {
   useEffect(() => {
     const OT = window.OT;
 
-    // Initialize an OpenTok Session object
+    // Initialize a Vonage Video Session object
     const session = OT.initSession(applicationId, sessionId);
 
     // Set session and token (and optionally properties) for Web Components
