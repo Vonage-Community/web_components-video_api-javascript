@@ -19,14 +19,14 @@
     "storybook:build": "npm run analyze -- --exclude dist && build-storybook"
   },
   "dependencies": {
-    "lit": "^2.0.2"
+    "lit": "^2.3.1"
   },
   "devDependencies": {
     "@custom-elements-manifest/analyzer": "^0.4.17",
     "@open-wc/eslint-config": "^4.3.0",
     "@open-wc/testing": "next",
     "@web/dev-server": "^0.1.28",
-    "@web/dev-server-storybook": "next",
+    "@web/dev-server-storybook": "^0.0.2",
     "@web/test-runner": "^0.13.22",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
