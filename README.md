@@ -31,9 +31,9 @@ To get started:
 
 •	Ensure you go through the [README.md](README.md) document so you can get familiar with the project.
 
-•	Check the [Issues](https://github.com/opentok/web-components/issues) for open tickets.
+•	Check the [Issues](https://github.com/Vonage-Community/web_components-video_api-javascript/issues) for open tickets.
 
-•	Create a pull request [here](https://github.com/opentok/web-components/pulls). [See this page for a guide on making pull request](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
+•	Create a pull request [here](https://github.com/Vonage-Community/web_components-video_api-javascript/pulls). [See this page for a guide on making pull request](https://docs.github.com/en/free-pro-team@latest/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request).
 
 
 ## License
