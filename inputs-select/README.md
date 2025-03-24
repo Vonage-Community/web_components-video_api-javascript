@@ -24,7 +24,7 @@ npm i @vonage/inputs-select
 
 ### OR using a CDN
 ```html
-<script type="module" src="https://unpkg.com/@vonage/inputs-select@latest/inputs-select.js?module"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/inputs-select@latest/inputs-select.js/+esm"></script>
 
 ```
 
