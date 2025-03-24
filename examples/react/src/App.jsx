@@ -10,25 +10,18 @@ function App() {
   const publisher = useRef(null);
   const subscribers = useRef(null);
 
-  // These values normally come from the backend in a production application, but for this demo, they are hardcoded
+  // If you have a Vonage Learning Server deployed, you can set your URL here.
+  let serverURL;
+  
+  // OR you can hardcode the values here. (In production, you make a request to your backend to get these values.)
   const applicationId = 'YOUR_APPLICATION_ID';
   const sessionId = 'YOUR_SESSION_ID';
   const token = 'YOUR_TOKEN';
 
-  const toggleVideo = () => {
-    publisher.current.toggleVideo();
-  };
-
-  const toggleAudio = () => {
-    publisher.current.toggleAudio();
-  };
-
-  useEffect(() => {
-    const OT = window.OT;
-
+  function initializeSession() {
     // Initialize a Vonage Video Session object
     const session = OT.initSession(applicationId, sessionId);
-
+  
     // Set session and token (and optionally properties) for Web Components
     publisher.current.session = session;
     publisher.current.token = token;
@@ -40,8 +33,40 @@ function App() {
       width: '100%',
     };
     subscribers.current.session = session;
-    subscribers.current.token = token;
-  });
+    subscribers.current.token = token;    
+  };
+
+  const toggleVideo = () => {
+    publisher.current.toggleVideo();
+  };
+
+  const toggleAudio = () => {
+    publisher.current.toggleAudio();
+  };
+
+  useEffect(() => {
+    const OT = window.OT;
+    if (serverURL){
+      const fetchCredentials = async () => {
+        try {
+          const response = await fetch(serverURL+ '/session');
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const credentials = await response.json();
+          applicationId = credentials.applicationId;
+          sessionId = credentials.sessionId;
+          token = credentials.token;
+          initializeSession();
+        } catch (err) {
+          console.error('Error getting credentials: ', err.message);
+        }
+      };
+      fetchCredentials();
+    } else {
+      initializeSession();
+    };
+  },[]);
 
   return (
     <div className="App">
