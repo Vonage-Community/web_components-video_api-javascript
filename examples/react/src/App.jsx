@@ -14,9 +14,9 @@ function App() {
   let serverURL;
   
   // OR you can hardcode the values here. (In production, you make a request to your backend to get these values.)
-  const applicationId = 'YOUR_APPLICATION_ID';
-  const sessionId = 'YOUR_SESSION_ID';
-  const token = 'YOUR_TOKEN';
+  let applicationId = 'YOUR_APPLICATION_ID';
+  let sessionId = 'YOUR_SESSION_ID';
+  let token = 'YOUR_TOKEN';
 
   function initializeSession() {
     // Initialize a Vonage Video Session object
