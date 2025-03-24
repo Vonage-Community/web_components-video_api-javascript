@@ -24,7 +24,7 @@ npm i @vonage/video-publisher
 
 ### OR using a CDN
 ```html
-<script type="module" src="https://unpkg.com/@vonage/video-publisher@latest/video-publisher.js?module"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-publisher@latest/video-publisher.js/+esm"></script>
 
 ```
 
