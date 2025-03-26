@@ -1,6 +1,6 @@
 # Vue x Video API Web Components
 
-This demo was created with [Stackblitz's Vue Starter App](https://stackblitz.com/fork/vue) to create a barebones application to focus on integrating the Web Components.
+This demo was created with [Stackblitz's Vue Starter App](https://stackblitz.com/fork/github/vitejs/vite/tree/main/packages/create-vite/template-vue?file=index.html&terminal=dev) to create a barebones application to focus on integrating the Web Components.
 
 Deployed application:
 
@@ -15,14 +15,22 @@ Deployed application:
 
 ### 1. Set `compilerOptions.isCustomElement`
 so that Vue knows you will be using Web Components. This may vary depending on how you are compiling your application as it states in the [documentation](https://vuejs.org/guide/extras/web-components.html).
-For this demo, compilation is done in the browser so, in your main.js, put this piece of code:
+For this demo, Vite will be used for compilation, so in your vite.config.js, it should look like this:
 ```js
-app.config.compilerOptions.isCustomElement = (tag) => {
-  return tag.includes('-');
-};
+export default defineConfig({
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.includes('-')
+        }
+      }
+    })
+  ],
+})
 ```
 
-### 2. Get opentok.js
+### 2. Get the Client SDK
 place into your index.html
 ```html
 <script src="https://cdn.jsdelivr.net/npm/@vonage/client-sdk-video@latest/dist/js/opentok.min.js"></script>
@@ -43,8 +51,8 @@ import '@vonage/video-subscribers/video-subscribers.js';
 
 OR use a CDN and place in your index.html file
 ```html
-<script type="module" src="https://unpkg.com/@vonage/video-publisher@latest/video-publisher.js?module"></script>
-<script type="module" src="https://unpkg.com/@vonage/video-subscribers@latest/video-subscribers.js?module"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-publisher@latest/video-publisher.js/+esm"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-subscribers@latest/video-subscribers.js/+esm"></script>
 ```
 
 ### 4. Place the Web Components
@@ -55,8 +63,14 @@ for ex:
 <video-subscribers ref="subscribers"></video-subscribers>
 ```
 
-### 5. Get `applicationId`, `sessionId`, and `token`
->**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, they are hardcoded.
+### 5. Get references to the Web Components using `ref`
+```html
+const publisher = ref(null);
+const subscribers = ref(null);
+```
+
+### 6. Get `applicationId`, `sessionId`, and `token`
+>**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, you can either they are hardcoded.
 
 To get the credentials needed to run the demo:
 - [Sign up for](https://ui.idp.vonage.com/ui/auth/registration) or [Log into](https://ui.idp.vonage.com/ui/auth/login) your account.
@@ -78,26 +92,26 @@ To get the credentials needed to run the demo:
 
     ![Screenshot of The Video API Playground tool generated details with the Application ID, Session ID, and Token highlighted in red boxes](https://github.com/Vonage-Community/web_components-video_api-javascript/raw/main/examples/vue/vonage-video-api-playground-session-id-token-screenshot.jpg)
 
-### 6. Create a session
+### 7. Create a session
 ```js
 const session = OT.initSession(applicationId, sessionId);
 ```
 
-### 7. Set the session and token for Web Components
+### 8. Set the session and token for Web Components
 ```js
-this.$refs.publisher.session = session;
-this.$refs.publisher.token = token;
-this.$refs.subscribers.session = session;
-this.$refs.subscribers.token = token;
+publisher.value.session = session;
+publisher.value.token = token;
+subscribers.value.session = session;
+subscribers.value.token = token;
 ```
 
-### 8. (Optional) Set properties attribute for Web Components (if available)
+### 9. (Optional) Set properties attribute for Web Components (if available)
 ```js
-this.$refs.publisher.properties = { ... };
+publisher.value.properties = { ... };
 ```
 (see [full list](https://vonage.github.io/conversation-docs/video-js-reference/latest/OT.html#initPublisher))
 ```js
-this.$refs.subscribers.properties = { ... };
+subscribers.value.properties = { ... };
 ```
 (see [full list](https://vonage.github.io/conversation-docs/video-js-reference/latest/Session.html#subscribe))
 
@@ -105,3 +119,11 @@ this.$refs.subscribers.properties = { ... };
 
 We go more in-depth in our blogpost
 [Use Web Components in Vue 2 and 3 + Composition API](https://developer.vonage.com/blog/20/10/30/use-web-components-in-vue-2-and-3-composition-api-dr).
+
+
+
+# Vue 3 + Vite
+
+This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+
+Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).

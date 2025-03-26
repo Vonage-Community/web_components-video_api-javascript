@@ -1,10 +1,5 @@
-const { createApp } = require('vue');
-import App from './App.vue';
+import { createApp } from 'vue'
+import './style.css'
+import App from './App.vue'
 
-const app = createApp(App);
-
-app.config.compilerOptions.isCustomElement = (tag) => {
-  return tag.includes('-');
-};
-
-app.mount('#app');
+createApp(App).mount('#app');
