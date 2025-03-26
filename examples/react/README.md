@@ -34,8 +34,8 @@ import '@vonage/video-subscribers/video-subscribers.js';
 
 OR use a CDN and place in your index.html file
 ```html
-<script type="module" src="https://unpkg.com/@vonage/video-publisher@latest/video-publisher.js?module"></script>
-<script type="module" src="https://unpkg.com/@vonage/video-subscribers@latest/video-subscribers.js?module"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-publisher@latest/video-publisher.js/+esm"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-subscribers@latest/video-subscribers.js/+esm"></script>
 ```
 
 ### 3. Place the Web Components
