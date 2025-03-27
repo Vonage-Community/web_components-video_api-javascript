@@ -1,6 +1,6 @@
 # Angular x Video API Web Components
 
-This demo was created with [Stackblitz's Angular Starter App](https://stackblitz.com/fork/angular-ivy) to create a barebones application to focus on integrating the Web Components.
+This demo was created with [Stackblitz's Angular Starter App](https://stackblitz.com/fork/github/stackblitz/starters/tree/main/angular?template=node&title=Angular%20Starter&description=An%20angular-cli%20project%20based%20on%20%40angular%2Fanimations%2C%20%40angular%2Fcommon%2C%20%40angular%2Fcompiler%2C%20%40angular%2Fcore%2C%20%40angular%2Fforms%2C%20%40angular%2Fplatform-browser%2C%20%40angular%2Fplatform-browser-dynamic%2C%20%40angular%2Frouter%2C%20core-js%2C%20rxjs%2C%20tslib%20and%20zone.js) to create a barebones application to focus on integrating the Web Components.
 
 Deployed application:
 
@@ -16,9 +16,9 @@ Deployed application:
 ### 1. Include `CUSTOM_ELEMENTS_SCHEMA`
 so that Angular knows you will be using Web Components
 ```js
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 ```
-include in `@NgModule`
+include in `@Component`
 ```js
 schemas: [CUSTOM_ELEMENTS_SCHEMA]
 ```
@@ -40,9 +40,8 @@ install to your project
 ```bash
 npm i @vonage/video-publisher
 npm i @vonage/video-subscribers
-npm i @vonage/screen-share
 ```
-then import into your `*.component.ts` project file
+then import into your `main.ts` project file
 ```js
 import '@vonage/video-publisher/video-publisher.js';
 import '@vonage/video-subscribers/video-subscribers.js';
@@ -69,7 +68,7 @@ for ex:
 ```
 
 ### 6. Get `applicationId`, `sessionId`, and `token`
->**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, they are hardcoded.
+>**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, you can either deploy a Video Learning Server ([Node](https://github.com/Vonage-Community/sample-video-node-learning_server) or [PHP](https://github.com/Vonage-Community/sample-video-php-learning_server)) and set `serverURL` or follow the next steps to generate and hardcode them.
 
 To get the credentials needed to run the demo:
 - [Sign up for](https://ui.idp.vonage.com/ui/auth/registration) or [Log into](https://ui.idp.vonage.com/ui/auth/login) your account.
