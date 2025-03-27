@@ -70,7 +70,7 @@ const subscribers = ref(null);
 ```
 
 ### 6. Get `applicationId`, `sessionId`, and `token`
->**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, you can either they are hardcoded.
+>**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, you can either deploy a Video Learning Server ([Node](https://github.com/Vonage-Community/sample-video-node-learning_server) or [PHP](https://github.com/Vonage-Community/sample-video-php-learning_server)) and set `serverURL` or follow the next steps to generate and hardcode them.
 
 To get the credentials needed to run the demo:
 - [Sign up for](https://ui.idp.vonage.com/ui/auth/registration) or [Log into](https://ui.idp.vonage.com/ui/auth/login) your account.
