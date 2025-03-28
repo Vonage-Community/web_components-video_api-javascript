@@ -77,28 +77,30 @@
     } else {
       initializeSession();
     };
-	});
+  });
 </script>
 
-<header> 
-  <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
-</header>
-<main id="video-chat-container">
-  <section id="publisher-container">
-    <fieldset>
-      <legend>Publisher</legend>
-      <video-publisher bind:this={publisher}></video-publisher>
-    </fieldset>
-    <button id="video-toggle"  on:click={toggleVideo}>toggle Video</button>
-    <button id="audio-toggle"  on:click={toggleAudio}>toggle Audio</button>
-  </section>
-  <section id="subscribers-container">
-    <fieldset>
-      <legend>Subscribers</legend>
-      <video-subscribers bind:this={subscribers}></video-subscribers>
-    </fieldset>
-  </section>
-</main>
+<div>
+  <header> 
+    <img src={svelteLogo} class="logo svelte" alt="Svelte Logo" />
+  </header>
+  <main id="video-chat-container">
+    <section id="publisher-container">
+      <fieldset>
+        <legend>Publisher</legend>
+        <video-publisher bind:this={publisher}></video-publisher>
+      </fieldset>
+      <button id="video-toggle"  on:click={toggleVideo}>toggle Video</button>
+      <button id="audio-toggle"  on:click={toggleAudio}>toggle Audio</button>
+    </section>
+    <section id="subscribers-container">
+      <fieldset>
+        <legend>Subscribers</legend>
+        <video-subscribers bind:this={subscribers}></video-subscribers>
+      </fieldset>
+    </section>
+  </main>
+</div>
 
 <style>
   #video-chat-container {
