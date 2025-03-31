@@ -42,9 +42,9 @@ import '@vonage/screen-share/screen-share.js';
 
 OR use a CDN and place in your index.html file
 ```html
-<script type="module" src="https://unpkg.com/@vonage/video-publisher@latest/video-publisher.js?module"></script>
-<script type="module" src="https://unpkg.com/@vonage/video-subscribers@latest/video-subscribers.js?module"></script>
-<script type="module" src="https://unpkg.com/@vonage/screen-share@latest/screen-share.js?module"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-publisher@latest/video-publisher.js/+esm"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-subscribers@latest/video-subscribers.js/+esm"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/@vonage/screen-share@latest/screen-share.js/+esm"></script>
 ```
 
 ### 3. Place the Web Components
@@ -63,7 +63,7 @@ const screenShareEl = document.querySelector('screen-share');
 ```
 
 ### 5. Get `applicationId`, `sessionId`, and `token`
->**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, they are hardcoded.
+>**Note**: In production applications, they are retrieved from the server [more info](https://developer.vonage.com/en/video/server-sdks/overview). For this demo, you can either deploy a Video Learning Server ([Node](https://github.com/Vonage-Community/sample-video-node-learning_server) or [PHP](https://github.com/Vonage-Community/sample-video-php-learning_server)) and set `serverURL` or follow the next steps to generate and hardcode them.
 
 To get the credentials needed to run the demo:
 - [Sign up for](https://ui.idp.vonage.com/ui/auth/registration) or [Log into](https://ui.idp.vonage.com/ui/auth/login) your account.
