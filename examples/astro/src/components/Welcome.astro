@@ -1,0 +1,138 @@
+---
+import astroLogo from '../assets/astro.svg';
+---
+
+<div id="container">
+	<img id="logo" src={astroLogo.src} alt="Astro Logo" fetchpriority="high" />
+	<main id="video-chat-container">
+		<section id="publisher-container">
+			<fieldset>
+				<legend>Publisher</legend>
+				<video-publisher></video-publisher>
+			</fieldset>
+			<button id="video-toggle">toggle Video</button>
+			<button id="audio-toggle">toggle Audio</button>
+		</section>
+		<section id="subscribers-container">
+			<fieldset>
+				<legend>Subscribers</legend>
+				<video-subscribers></video-subscribers>
+			</fieldset>
+		</section>
+	</main>
+</div>
+
+<script is:inline type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-publisher@latest/video-publisher.js/+esm"></script>
+<script is:inline type="module" src="https://cdn.jsdelivr.net/npm/@vonage/video-subscribers@latest/video-subscribers.js/+esm"></script>
+
+<script is:inline type="module">
+	const videoPublisherEl = document.querySelector('video-publisher');
+	const audioToggle = document.querySelector('#audio-toggle');
+	const videoToggle = document.querySelector('#video-toggle');
+
+	const videoSubscribersEl = document.querySelector('video-subscribers');
+
+	let serverURL;
+	const applicationId = 'YOUR_APPLICATION_ID';
+	const sessionId = 'YOUR_SESSION_ID';
+	const token = 'YOUR_TOKEN';
+
+	function initializeSession() {
+    const session = OT.initSession(applicationId, sessionId);
+    // Set session and token (and optionally properties) for Web Components  
+		videoPublisherEl.session = session;
+		videoPublisherEl.token = token;
+		videoPublisherEl.properties = {
+			fitMode: 'cover',
+			height: '100%',
+			resolution: '1920x1080',
+			videoContentHint: 'detail',
+			width: '100%',
+		};
+
+		videoSubscribersEl.session = session;
+		videoSubscribersEl.token = token;
+  }
+
+	if (serverURL){
+		const fetchCredentials = async () => {
+			try {
+				const response = await fetch(serverURL+ '/session');
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
+				const credentials = await response.json();
+				applicationId = credentials.applicationId;
+				sessionId = credentials.sessionId;
+				token = credentials.token;
+				initializeSession();
+			} catch (err) {
+				console.error('Error getting credentials: ', err.message);
+			}
+		};
+		fetchCredentials();
+	} else {
+		initializeSession();
+	};
+
+	audioToggle.addEventListener('click', () => {
+		console.log('audioToggle!');
+		videoPublisherEl.toggleAudio();
+	});
+
+	videoToggle.addEventListener('click', () => {
+		console.log('videoToggle!');
+		videoPublisherEl.toggleVideo();
+	});
+
+</script>
+
+<style>
+	* {
+		box-sizing: border-box;
+	}
+
+	#container {
+		font-family: Inter, Roboto, 'Helvetica Neue', 'Arial Nova', 'Nimbus Sans', Arial, sans-serif;
+		height: 100%;
+		text-align: center;
+	}
+
+	main {
+		padding: 1rem;
+	}
+
+	h1 {
+		font-weight: bold;
+		font-size: 1.5rem;
+	}
+
+	#video-chat-container {
+		display: flex;
+		width: 100%;
+	}
+
+	#publisher-container {
+		width: 400px;
+	}
+
+	#subscribers-container {
+		width: 100%;
+	}
+
+	video-publisher,
+	video-subscriber {
+		display: block;
+		aspect-ratio: 16/9;
+	}
+
+	video-subscribers {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+		place-items: center;
+	}
+
+	#logo {
+		height: 50px;
+	}
+</style>
