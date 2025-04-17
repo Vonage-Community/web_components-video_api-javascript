@@ -33,9 +33,9 @@ import astroLogo from '../assets/astro.svg';
 	const videoSubscribersEl = document.querySelector('video-subscribers');
 
 	let serverURL;
-	const applicationId = 'YOUR_APPLICATION_ID';
-	const sessionId = 'YOUR_SESSION_ID';
-	const token = 'YOUR_TOKEN';
+	let applicationId = 'YOUR_APPLICATION_ID';
+	let sessionId = 'YOUR_SESSION_ID';
+	let token = 'YOUR_TOKEN';
 
 	function initializeSession() {
     const session = OT.initSession(applicationId, sessionId);
