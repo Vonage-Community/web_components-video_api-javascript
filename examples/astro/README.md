@@ -1,4 +1,4 @@
-# Vanilla JS x Video API Web Components
+# Astro x Video API Web Components
 
 This demo was created with [Stackblitz's Astro Basics Starter](https://stackblitz.com/fork/github/withastro/astro/tree/latest/examples/basics?file=README.md&title=Astro%20Starter%20Kit:%20Basics) to create a barebones applications to focus on integrating the Web Components.
 
