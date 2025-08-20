@@ -12,7 +12,8 @@ export class LiveChat extends LitElement {
   static properties = {
     session: { type: Object },
     token: { type: String },
-    username: { type: String }
+    username: { type: String },
+    placeholder: { type: String }
   };
 
   constructor() {
@@ -20,6 +21,7 @@ export class LiveChat extends LitElement {
     this.session = {};
     this.token = '';
     this.username = '';
+    this.placeholder = 'Input your text here!'
   }
 
   connectedCallback() {
@@ -37,7 +39,7 @@ export class LiveChat extends LitElement {
         }
       });
 
-      const msgHistory = this.renderRoot?.querySelector('#chat-history');
+      const msgHistory = this.renderRoot?.querySelector('#history');
       this.session.on('signal:msg', (event) => {
         console.log('signal:msg: ', event);
         const message = JSON.parse(event.data);
@@ -56,7 +58,6 @@ export class LiveChat extends LitElement {
         msgSender.textContent = message.sender;
         msgContainer.appendChild(msgText);
         msgContainer.appendChild(msgSender);
-        // msg.className = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         msgHistory.appendChild(msgContainer);
         msgContainer.scrollIntoView();
       });
@@ -65,9 +66,9 @@ export class LiveChat extends LitElement {
 
   __sendMessage(event) {
     event.preventDefault();
-    const msgForm = this.renderRoot?.querySelector("#chat-form");
-    if(event.target.msgTxt.value){
-      console.log('send message', event.target.msgTxt.value, msgForm);
+    const msgForm = this.renderRoot?.querySelector("#form");
+    if(event.target.msgTxt.value && event.target.msgTxt.value.trim().length !== 0){
+      console.log('send message', event.target.msgTxt.value);
       
       this.session.signal({
         type: 'msg',
@@ -85,10 +86,10 @@ export class LiveChat extends LitElement {
 
   render() {
     return html`
-      <div id="chat-container" part="chat-container">
-        <p id="chat-history" part="chat-history"></p>
-        <form @submit=${this.__sendMessage} id="chat-form" part="chat-form">
-          <input type="text" name="msgTxt" placeholder="Input your text here" id="msgTxt" part="input"></input>
+      <div id="container" part="container">
+        <p id="history" part="history"></p>
+        <form @submit=${this.__sendMessage} id="form" part="form">
+          <input type="text" name="msgTxt" placeholder="${this.placeholder}" id="msgTxt" part="input"></input>
         </form>
       </div>
     `;

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <style>
+    body {
+      background: #fafafa;
+    }
+  </style>
+  <!-- import the webpage's stylesheet -->
+  <!-- <link rel="stylesheet" href="demo/styles.css" /> -->
+
+  <!-- Load Vonage Video Client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@vonage/client-sdk-video@latest/dist/js/opentok.min.js"></script>
+
+  <script type="module" src="live-poll-control.js" defer></script>
+  <script src="demo/script.js" defer></script>
+
+</head>
+<body>
+
+  <live-poll-control></live-poll-control>
+  <!-- <div id="demo"></div>
+
+  <script type="module">
+    import { html, render } from 'lit';
+    import '../live-poll-control.js';
+
+    const header = 'Hello owc World!';
+    render(
+      html`
+        <live-poll-control .header=${header}>
+          some light-dom
+        </live-poll-control>
+      `,
+      document.querySelector('#demo')
+    );
+  </script> -->
+</body>
+</html>
