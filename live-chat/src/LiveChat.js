@@ -40,6 +40,18 @@ export class LiveChat extends LitElement {
           console.error("Error connection to session: ",error);
         }
       });
+
+      const msgHistory = this.renderRoot?.querySelector('#history');
+      this.session.on('signal:msg', (event) => {
+        console.log('signal:msg: ', event);
+        const message = JSON.parse(event.data);
+        const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
+        const msg = document.createElement('p');
+        msg.textContent = event.data;
+        msg.className = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
+        msgHistory.appendChild(msg);
+        msg.scrollIntoView();
+      });
     }
   }
 
@@ -53,15 +65,15 @@ export class LiveChat extends LitElement {
     const msgForm = this.renderRoot?.querySelector("#chat-form");
     if(event.target.msgTxt.value){
       console.log('send message', event.target.msgTxt.value, msgForm);
-      msgForm.reset();
+      
       this.session.signal({
         type: 'msg',
-        data: event.target.msgTxt.value
+        data: JSON.stringify({text: event.target.msgTxt.value, sender: this.username})
       }, (error) => {
         if (error) {
           handleError(error);
         } else {
-          msgTxt.value = '';
+          msgForm.reset();
         }
       });
     }
