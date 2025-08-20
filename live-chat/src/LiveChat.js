@@ -10,8 +10,6 @@ export class LiveChat extends LitElement {
   `;
 
   static properties = {
-    header: { type: String },
-    counter: { type: Number },
     session: { type: Object },
     token: { type: String },
     username: { type: String }
@@ -19,8 +17,6 @@ export class LiveChat extends LitElement {
 
   constructor() {
     super();
-    this.header = 'Hey there';
-    this.counter = 5;
     this.session = {};
     this.token = '';
     this.username = '';
@@ -41,23 +37,30 @@ export class LiveChat extends LitElement {
         }
       });
 
-      const msgHistory = this.renderRoot?.querySelector('#history');
+      const msgHistory = this.renderRoot?.querySelector('#chat-history');
       this.session.on('signal:msg', (event) => {
         console.log('signal:msg: ', event);
         const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        const msg = document.createElement('p');
-        msg.textContent = event.data;
-        msg.className = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        msgHistory.appendChild(msg);
-        msg.scrollIntoView();
+        console.log("owner: ", owner);
+        const msgContainer = document.createElement('div');
+        msgContainer.part.add("message", `${owner}`);
+        msgContainer.classList.add("message", `${owner}`);
+        const msgText = document.createElement('p');
+        msgText.part.add("message-text", `${owner}`);
+        msgText.classList.add("message-text", `${owner}`);
+        msgText.textContent = message.text;
+        const msgSender = document.createElement('p');
+        msgSender.part.add("message-sender", `${owner}`);
+        msgSender.classList.add("message-sender", `${owner}`);
+        msgSender.textContent = message.sender;
+        msgContainer.appendChild(msgText);
+        msgContainer.appendChild(msgSender);
+        // msg.className = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
+        msgHistory.appendChild(msgContainer);
+        msgContainer.scrollIntoView();
       });
     }
-  }
-
-
-  __increment() {
-    this.counter += 1;
   }
 
   __sendMessage(event) {
@@ -82,11 +85,10 @@ export class LiveChat extends LitElement {
 
   render() {
     return html`
-      <div id="textchat">
-        <h1>${this.username}</h1>
-        <p id="history"></p>
-        <form @submit=${this.__sendMessage} id="chat-form">
-          <input type="text" name="msgTxt" placeholder="Input your text here" id="msgTxt"></input>
+      <div id="chat-container" part="chat-container">
+        <p id="chat-history" part="chat-history"></p>
+        <form @submit=${this.__sendMessage} id="chat-form" part="chat-form">
+          <input type="text" name="msgTxt" placeholder="Input your text here" id="msgTxt" part="input"></input>
         </form>
       </div>
     `;

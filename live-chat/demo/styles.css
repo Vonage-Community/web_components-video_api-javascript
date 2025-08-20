@@ -1,0 +1,53 @@
+live-chat {
+  height: 100%;
+  width: 30vw;
+}
+
+live-chat::part(chat-history) {
+  height: 300px;
+  overflow-y: auto;
+}
+
+live-chat::part(input){
+  width: 100%;
+}
+
+live-chat::part(message) {
+  padding: 15px;
+  margin: 5px;
+}
+
+live-chat::part(message mine) {
+  text-align: right;
+}
+
+live-chat::part(message-text) {
+  border-radius: 6px;
+  background-color: #f0f0f0;
+  display: inline-block;
+  padding: 2px 8px;
+  margin: 0;
+  border-radius: 6px 6px 6px 0;
+  font-size: 1.4rem;
+}
+
+live-chat::part(message-text mine) {
+  background-color: #e0e0ff;
+  border-radius: 6px 6px 0px 6px;
+}
+
+live-chat::part(message-image mine) {
+  background-color: #e0e0ff;
+  border-radius: 6px 6px 0px 6px;
+}
+
+live-chat::part(message-sender) {
+  font-size: 0.8rem;
+  margin: 0;
+  padding: 0;
+}
+
+live-chat::part(message-sender mine) {
+  text-align: right;
+  color: black;
+}
