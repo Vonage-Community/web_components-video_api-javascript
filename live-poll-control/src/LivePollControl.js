@@ -93,7 +93,15 @@ export class LivePollControl extends LitElement {
   }
 
   __removeOption(event) {
-    console.log('remove option', event.target.dataset.option);
+    this.options = this.options.filter((_, i) => i !== Number(event.target.dataset.index));
+  }
+
+  __updateOption(event, index) {
+    console.log("update option: ", event.target.value, index);
+    const updatedOptions = this.options.slice(); // Create a shallow copy
+    updatedOptions[index] = event.target.value;
+    this.options = updatedOptions;
+    console.log('options: ', this.options);
 
   }
 
@@ -123,7 +131,7 @@ export class LivePollControl extends LitElement {
         <ul id="options" part="options">
           ${this.options.map(
             (option, index) => html`
-                <li><input value="${index}: ${option}" ?disabled=${this.pollStarted}></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-option="${option}" part="remove-button">${this.removeButtonText}</button></li>
+                <li><input .value="${option}" ?disabled=${this.pollStarted} @input=${(e) => this.__updateOption(e, index)}></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-index="${index}" data-option="${option}" part="remove-button">${this.removeButtonText}</button></li>
               `
           )}
         </ul>
