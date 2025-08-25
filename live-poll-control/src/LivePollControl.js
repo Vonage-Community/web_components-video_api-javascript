@@ -12,6 +12,7 @@ export class LivePollControl extends LitElement {
   static properties = {
     session: { type: Object },
     token: { type: String },
+    pollTitleText: { type: String },
     pollStarted: { type: Boolean },
     startButtonText: { type: String },
     stopButtonText: { type: String },
@@ -27,6 +28,7 @@ export class LivePollControl extends LitElement {
     super();
     this.session = {};
     this.token = '';
+    this.pollTitleText = 'Poll Title';
     this.pollStarted = false;
     this.options = [];
     this.startButtonText = 'start poll';
@@ -123,8 +125,11 @@ export class LivePollControl extends LitElement {
   }
 
   __resetPoll() {
-    console.log('reset poll');
-
+    const resettedPoll = this.options.slice();
+    resettedPoll.map((option) => {
+      option.votes = 0;
+    });
+    this.options = resettedPoll;
   }
 
 
@@ -132,6 +137,7 @@ export class LivePollControl extends LitElement {
   render() {
     return html`
       <div id="container" part="container">
+        <h1>${this.pollTitleText}</h1>
         <ul id="options" part="options">
           ${this.options.map(
             (option, index) => html`
