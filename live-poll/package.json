@@ -1,0 +1,26 @@
+{
+  "name": "live-poll",
+  "description": "Webcomponent live-poll following open-wc recommendations",
+  "license": "MIT",
+  "author": "live-poll",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "index.js",
+  "module": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./live-poll.js": "./live-poll.js"
+  },
+  "scripts": {
+    "analyze": "cem analyze --litelement",
+    "start": "web-dev-server"
+  },
+  "dependencies": {
+    "lit": "^3.1.4"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.10.3",
+    "@web/dev-server": "^0.4.6"
+  },
+  "customElements": "custom-elements.json"
+}

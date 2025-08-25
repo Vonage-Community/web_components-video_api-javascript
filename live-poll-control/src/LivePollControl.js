@@ -1,4 +1,5 @@
 import { html, css, LitElement } from 'lit';
+import {live} from 'lit/directives/live.js';
 
 export class LivePollControl extends LitElement {
   static styles = css`
@@ -13,6 +14,7 @@ export class LivePollControl extends LitElement {
     session: { type: Object },
     token: { type: String },
     pollTitleText: { type: String },
+    pollTitlePlaceholder: { type: String },
     pollStarted: { type: Boolean },
     startButtonText: { type: String },
     stopButtonText: { type: String },
@@ -28,7 +30,8 @@ export class LivePollControl extends LitElement {
     super();
     this.session = {};
     this.token = '';
-    this.pollTitleText = 'Poll Title';
+    this.pollTitleText = '';
+    this.pollTitlePlaceholder = 'enter poll title';
     this.pollStarted = false;
     this.options = [];
     this.startButtonText = 'start poll';
@@ -63,21 +66,21 @@ export class LivePollControl extends LitElement {
       });
 
       this.session.on('signal:poll-stop', (event) => {
-        console.log('signal:poll-start: ', event);
-        const message = JSON.parse(event.data);
+        console.log('signal:poll-stop: ', event);
+        // const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
       });
 
       this.session.on('signal:poll-reset', (event) => {
-        console.log('signal:poll-start: ', event);
+        console.log('signal:poll-reset: ', event);
         const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
       });
 
       this.session.on('signal:poll-vote', (event) => {
-        console.log('signal:poll-start: ', event);
+        console.log('signal:poll-vote: ', event);
         const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
@@ -113,23 +116,49 @@ export class LivePollControl extends LitElement {
 
   __startPoll() {
     console.log('start poll');
-    this.pollStarted = true;
+    this.session.signal({
+      type: 'poll-start',
+      data: JSON.stringify({title: this.pollTitleText, options: this.options})
+    }, (error) => {
+      if (error) {
+        console.error('Error starting poll: ',error);
+      } else {
+        this.pollStarted = true;
+      }
+    });
 
   }
 
   __stopPoll() {
     console.log('stop poll');
-    this.pollStarted = false;
+    this.session.signal({
+      type: 'poll-stop'
+    }, (error) => {
+      if (error) {
+        console.error('Error stopping poll: ',error);
+      } else {
+        this.pollStarted = false;
+      }
+    });
 
 
   }
 
   __resetPoll() {
-    const resettedPoll = this.options.slice();
-    resettedPoll.map((option) => {
-      option.votes = 0;
+    this.session.signal({
+      type: 'poll-reset',
+      data: JSON.stringify({title: this.pollTitleText, options: this.options})
+    }, (error) => {
+      if (error) {
+        console.error('Error starting poll: ',error);
+      } else {
+        const resettedPoll = this.options.slice();
+        resettedPoll.map((option) => {
+          option.votes = 0;
+        });
+        this.options = resettedPoll;
+      }
     });
-    this.options = resettedPoll;
   }
 
 
@@ -138,6 +167,7 @@ export class LivePollControl extends LitElement {
     return html`
       <div id="container" part="container">
         <h1>${this.pollTitleText}</h1>
+        <input .value="${live(this.pollTitleText)}" @input=${(e) => this.pollTitleText = e.target.value} ?disabled=${this.pollStarted} placeholder="${this.pollTitlePlaceholder}" id="poll-title" name="poll-title-input" part="poll-title-input"></input>
         <ul id="options" part="options">
           ${this.options.map(
             (option, index) => html`

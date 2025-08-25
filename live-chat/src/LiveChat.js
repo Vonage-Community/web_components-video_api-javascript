@@ -75,7 +75,7 @@ export class LiveChat extends LitElement {
         data: JSON.stringify({text: event.target.msgTxt.value, sender: this.username})
       }, (error) => {
         if (error) {
-          handleError(error);
+          console.error("Error sending message",error);
         } else {
           msgForm.reset();
         }
