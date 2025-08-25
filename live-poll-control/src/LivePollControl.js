@@ -15,10 +15,12 @@ export class LivePollControl extends LitElement {
     pollStarted: { type: Boolean },
     startButtonText: { type: String },
     stopButtonText: { type: String },
+    resetButtonText: { type: String },
     removeButtonText: { type: String },
     placeholder: { type: String },
     inputButtonText: { type: String },
-    options: { type: Array }
+    options: { type: Array },
+    totalVotes: { type: Number }
   };
 
   constructor() {
@@ -29,9 +31,11 @@ export class LivePollControl extends LitElement {
     this.options = [];
     this.startButtonText = 'start poll';
     this.stopButtonText = 'stop poll';
+    this.resetButtonText = 'reset poll';
     this.placeholder = 'enter option';
     this.inputButtonText = 'add option';
     this.removeButtonText = 'remove';
+    this.totalVotes = 5;
   }
 
   connectedCallback() {
@@ -85,7 +89,7 @@ export class LivePollControl extends LitElement {
     const optionForm = this.renderRoot?.querySelector("#form");
     if(event.target.optionTxt.value && event.target.optionTxt.value.trim().length !== 0){
       console.log('add option', event.target.optionTxt.value);
-      this.options = [...this.options, event.target.optionTxt.value];   
+      this.options = [...this.options, { text: event.target.optionTxt.value, votes:0}];   
       optionForm.reset();
     }
 
@@ -99,7 +103,7 @@ export class LivePollControl extends LitElement {
   __updateOption(event, index) {
     console.log("update option: ", event.target.value, index);
     const updatedOptions = this.options.slice(); // Create a shallow copy
-    updatedOptions[index] = event.target.value;
+    updatedOptions[index].text = event.target.value;
     this.options = updatedOptions;
     console.log('options: ', this.options);
 
@@ -131,7 +135,10 @@ export class LivePollControl extends LitElement {
         <ul id="options" part="options">
           ${this.options.map(
             (option, index) => html`
-                <li><input .value="${option}" ?disabled=${this.pollStarted} @input=${(e) => this.__updateOption(e, index)}></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-index="${index}" data-option="${option}" part="remove-button">${this.removeButtonText}</button></li>
+                <li part="option">
+                  <input .value="${option.text}" ?disabled=${this.pollStarted} @input=${(e) => this.__updateOption(e, index)} id="option-text-${index}" name="option-text-${index}"></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-index="${index}" data-option="${option}" part="remove-button">${this.removeButtonText}</button>
+                  <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}">${option.votes}</output>
+                </li>
               `
           )}
         </ul>
@@ -144,6 +151,7 @@ export class LivePollControl extends LitElement {
             ? html`<button @click=${this.__stopPoll} ?disabled=${!this.pollStarted} part="stop-button">${this.stopButtonText}</button>`
             : html`<button @click=${this.__startPoll} ?disabled=${this.pollStarted} part="start-button">${this.startButtonText}</button>`          
         }
+        <button @click=${this.__resetPoll} part="reset-button">${this.resetButtonText}</button>
       <div>
     `;
   }
