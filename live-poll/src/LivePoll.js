@@ -12,12 +12,22 @@ export class LivePoll extends LitElement {
   static properties = {
     session: { type: Object },
     token: { type: String },
+    poll: { type: Object },
+    stopVote: { type: Boolean },
+    buttonText: { type: String },
+    selectedOption: { type: Number },
+    totalVotes: { type: Number }
   };
 
   constructor() {
     super();
     this.session = {};
     this.token = '';
+    this.poll = {};
+    this.stopVote = true;
+    this.buttonText = 'vote';
+    this.selectedOption = 0;
+    this.totalVotes = 0;
   }
 
   connectedCallback() {
@@ -37,9 +47,12 @@ export class LivePoll extends LitElement {
 
       this.session.on('signal:poll-start', (event) => {
         console.log('signal:poll-start: ', event);
-        const message = JSON.parse(event.data);
+        // const message = JSON.parse(event.data);
+        this.poll = JSON.parse(event.data);
+        console.log("start: ", this.poll);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
+        this.stopVote = false;
       });
 
       this.session.on('signal:poll-stop', (event) => {
@@ -47,29 +60,68 @@ export class LivePoll extends LitElement {
         // const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
+        this.stopVote = true;
       });
 
       this.session.on('signal:poll-reset', (event) => {
         console.log('signal:poll-reset: ', event);
-        const message = JSON.parse(event.data);
+        this.totalVotes = 0;
+        this.poll = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
+        // this.stopVote = false;
       });
 
       this.session.on('signal:poll-vote', (event) => {
         console.log('signal:poll-vote: ', event);
-        const message = JSON.parse(event.data);
+        const vote = JSON.parse(event.data);
+        this.poll.options[vote.selectedOption].votes += 1;
+        this.totalVotes += 1;
+        console.log("this.poll: ", this.poll);
+        this.requestUpdate()
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
+        if (owner === 'mine'){
+          this.stopVote = true;
+        }
       });
 
     }
   }
 
+  __vote() {
+    console.log('this.selectedOption: ', this.selectedOption);
+    this.stopVote = true;
+    this.session.signal({
+      type: 'poll-vote',
+      data: JSON.stringify({selectedOption: this.selectedOption})
+    }, (error) => {
+      if (error) {
+        console.error('Error sending vote: ', error);
+        this.stopVote = false
+      } else {
+        this.stopVote = true;
+      }
+    });
+  }
+
+
   render() {
     return html`
-      <h2>${this.header} Nr. ${this.counter}!</h2>
-      <button @click=${this.__increment}>increment</button>
+      <div part="container">
+        <p part="title">${this.poll.title}</p>
+        <div part="options">
+          ${this.poll.options?.map(
+            (option, index) => html`
+                <div part="option">
+                  <input type="radio" @click=${(e) => this.selectedOption = index} .value="${option.text}" id="option-text-${index}" name="option" ?disabled=${this.stopVote} /><label for="option-text-${index}">${option.text}</label>
+                  <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}">${option.votes}</output>
+                </div>
+              `
+          )}
+        </div>
+        <button @click=${this.__vote} ?disabled=${this.stopVote} part="button" >${this.buttonText}</button>
+      </div>
     `;
   }
 }
