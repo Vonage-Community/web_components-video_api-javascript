@@ -19,6 +19,7 @@ export class LivePollControl extends LitElement {
     startButtonText: { type: String },
     stopButtonText: { type: String },
     resetButtonText: { type: String },
+    closeButtonText: { type: String },
     removeButtonText: { type: String },
     placeholder: { type: String },
     inputButtonText: { type: String },
@@ -37,6 +38,7 @@ export class LivePollControl extends LitElement {
     this.startButtonText = 'start poll';
     this.stopButtonText = 'stop poll';
     this.resetButtonText = 'reset poll';
+    this.closeButtonText = 'close poll';
     this.placeholder = 'enter option';
     this.inputButtonText = 'add option';
     this.removeButtonText = 'remove';
@@ -162,6 +164,18 @@ export class LivePollControl extends LitElement {
   }
 
 
+  __closePoll() {
+    this.session.signal({
+      type: 'poll-close'
+    }, (error) => {
+      if (error) {
+        console.error('Error starting poll: ',error);
+      } else {
+        this.pollStarted = false;
+      }
+    });
+  }
+
 
   render() {
     return html`
@@ -188,6 +202,7 @@ export class LivePollControl extends LitElement {
             : html`<button @click=${this.__startPoll} ?disabled=${this.pollStarted} part="start-button">${this.startButtonText}</button>`          
         }
         <button @click=${this.__resetPoll} part="reset-button">${this.resetButtonText}</button>
+        <button @click=${this.__closePoll} part="close-button">${this.closeButtonText}</button>
       <div>
     `;
   }

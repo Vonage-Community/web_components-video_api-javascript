@@ -53,6 +53,15 @@ export class LivePoll extends LitElement {
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
         console.log("owner: ", owner);
         this.stopVote = false;
+        const options = {
+          detail: {
+            status: 'started',
+          },
+          bubbles: true,
+          composed: true,
+        };
+        this.dispatchEvent(new CustomEvent('poll-status', options));
+
       });
 
       this.session.on('signal:poll-stop', (event) => {
@@ -85,6 +94,21 @@ export class LivePoll extends LitElement {
           this.stopVote = true;
         }
       });
+
+      this.session.on('signal:poll-close', (event) => {
+        console.log('signal:poll-close: ', event);
+        const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
+        console.log("owner: ", owner);
+        const options = {
+          detail: {
+            status: 'closed',
+          },
+          bubbles: true,
+          composed: true,
+        };
+        this.dispatchEvent(new CustomEvent('poll-status', options));
+      });
+
 
     }
   }
