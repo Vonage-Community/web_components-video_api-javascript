@@ -42,7 +42,7 @@ export class LivePollControl extends LitElement {
     this.placeholder = 'enter option';
     this.inputButtonText = 'add option';
     this.removeButtonText = 'remove';
-    this.totalVotes = 5;
+    this.totalVotes = 0;
   }
 
   connectedCallback() {
@@ -61,31 +61,26 @@ export class LivePollControl extends LitElement {
       });
 
       this.session.on('signal:poll-start', (event) => {
-        console.log('signal:poll-start: ', event);
-        const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
       });
 
       this.session.on('signal:poll-stop', (event) => {
-        console.log('signal:poll-stop: ', event);
-        // const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
       });
 
       this.session.on('signal:poll-reset', (event) => {
-        console.log('signal:poll-reset: ', event);
-        const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
+      });
+
+      this.session.on('signal:poll-close', (event) => {
+        const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
       });
 
       this.session.on('signal:poll-vote', (event) => {
-        console.log('signal:poll-vote: ', event);
-        const message = JSON.parse(event.data);
+        const vote = JSON.parse(event.data);
+        this.options[vote.selectedOption].votes += 1;
+        this.totalVotes += 1;
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
       });
 
     }
@@ -95,7 +90,6 @@ export class LivePollControl extends LitElement {
     event.preventDefault();
     const optionForm = this.renderRoot?.querySelector("#form");
     if(event.target.optionTxt.value && event.target.optionTxt.value.trim().length !== 0){
-      console.log('add option', event.target.optionTxt.value);
       this.options = [...this.options, { text: event.target.optionTxt.value, votes:0}];   
       optionForm.reset();
     }
@@ -108,16 +102,12 @@ export class LivePollControl extends LitElement {
   }
 
   __updateOption(event, index) {
-    console.log("update option: ", event.target.value, index);
     const updatedOptions = this.options.slice(); // Create a shallow copy
     updatedOptions[index].text = event.target.value;
     this.options = updatedOptions;
-    console.log('options: ', this.options);
-
   }
 
   __startPoll() {
-    console.log('start poll');
     this.session.signal({
       type: 'poll-start',
       data: JSON.stringify({title: this.pollTitleText, options: this.options})
@@ -132,7 +122,6 @@ export class LivePollControl extends LitElement {
   }
 
   __stopPoll() {
-    console.log('stop poll');
     this.session.signal({
       type: 'poll-stop'
     }, (error) => {
@@ -159,6 +148,7 @@ export class LivePollControl extends LitElement {
           option.votes = 0;
         });
         this.options = resettedPoll;
+        this.totalVotes = 0;
       }
     });
   }

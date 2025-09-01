@@ -46,12 +46,8 @@ export class LivePoll extends LitElement {
       });
 
       this.session.on('signal:poll-start', (event) => {
-        console.log('signal:poll-start: ', event);
-        // const message = JSON.parse(event.data);
         this.poll = JSON.parse(event.data);
-        console.log("start: ", this.poll);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
         this.stopVote = false;
         const options = {
           detail: {
@@ -65,10 +61,7 @@ export class LivePoll extends LitElement {
       });
 
       this.session.on('signal:poll-stop', (event) => {
-        console.log('signal:poll-stop: ', event);
-        // const message = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
         this.stopVote = true;
         const options = {
           detail: {
@@ -81,11 +74,9 @@ export class LivePoll extends LitElement {
       });
 
       this.session.on('signal:poll-reset', (event) => {
-        console.log('signal:poll-reset: ', event);
         this.totalVotes = 0;
         this.poll = JSON.parse(event.data);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
         const options = {
           detail: {
             status: 'resetted',
@@ -97,14 +88,11 @@ export class LivePoll extends LitElement {
       });
 
       this.session.on('signal:poll-vote', (event) => {
-        console.log('signal:poll-vote: ', event);
         const vote = JSON.parse(event.data);
         this.poll.options[vote.selectedOption].votes += 1;
         this.totalVotes += 1;
-        console.log("this.poll: ", this.poll);
         this.requestUpdate()
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
         if (owner === 'mine'){
           this.stopVote = true;
         }
@@ -120,9 +108,7 @@ export class LivePoll extends LitElement {
       });
 
       this.session.on('signal:poll-close', (event) => {
-        console.log('signal:poll-close: ', event);
         const owner = event.from.connectionId === this.session.connection.connectionId ? 'mine' : 'theirs';
-        console.log("owner: ", owner);
         const options = {
           detail: {
             status: 'closed',
@@ -138,7 +124,6 @@ export class LivePoll extends LitElement {
   }
 
   __vote() {
-    console.log('this.selectedOption: ', this.selectedOption);
     this.stopVote = true;
     this.session.signal({
       type: 'poll-vote',
