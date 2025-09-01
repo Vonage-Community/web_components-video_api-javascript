@@ -7,6 +7,12 @@ export class LivePoll extends LitElement {
       padding: 25px;
       color: var(--live-poll-text-color, #000);
     }
+    li:nth-child(odd) {
+      background-color: var(--live-poll-nth-child-odd-color, Field);
+    }
+    li:nth-child(even) {
+      background-color: var(--live-poll-nth-child-even-color, AccentColor);
+    }
   `;
 
   static properties = {
@@ -143,16 +149,16 @@ export class LivePoll extends LitElement {
     return html`
       <div part="container">
         <p part="title">${this.poll.title}</p>
-        <div part="options">
+        <ul id="options" part="options">
           ${this.poll.options?.map(
             (option, index) => html`
-                <div part="option">
+                <li part="option">
                   <input type="radio" @click=${(e) => this.selectedOption = index} .value="${option.text}" id="option-text-${index}" name="option" ?disabled=${this.stopVote} part="radio" /><label for="option-text-${index}" part="label">${option.text}</label>
                   <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100" part="progress">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}" part="output">${option.votes}</output>
-                </div>
+                </li>
               `
           )}
-        </div>
+        </ul>
         <button @click=${this.__vote} ?disabled=${this.stopVote} part="button" >${this.buttonText}</button>
       </div>
     `;

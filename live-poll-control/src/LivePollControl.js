@@ -8,6 +8,12 @@ export class LivePollControl extends LitElement {
       padding: 25px;
       color: var(--live-poll-control-text-color, #000);
     }
+    li:nth-child(odd) {
+      background-color: var(--live-poll-control-nth-child-odd-color, Field);
+    }
+    li:nth-child(even) {
+      background-color: var(--live-poll-control-nth-child-even-color, AccentColor);
+    }
   `;
 
   static properties = {
