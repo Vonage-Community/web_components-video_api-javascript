@@ -3,12 +3,16 @@ live-chat {
   width: 30vw;
 }
 
-live-chat::part(chat-history) {
+live-chat::part(history) {
   height: 300px;
   overflow-y: auto;
 }
 
-live-chat::part(input){
+live-chat::part(form) {
+  display: flex;
+}
+
+live-chat::part(input) {
   width: 100%;
 }
 

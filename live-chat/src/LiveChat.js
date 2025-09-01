@@ -13,7 +13,9 @@ export class LiveChat extends LitElement {
     session: { type: Object },
     token: { type: String },
     username: { type: String },
-    placeholder: { type: String }
+    placeholder: { type: String, attribute: 'placeholder' },
+    buttonText: { type: String, attribute: 'button-text' },
+    showButton: { type: Boolean, attribute: 'show-button'}
   };
 
   constructor() {
@@ -21,7 +23,9 @@ export class LiveChat extends LitElement {
     this.session = {};
     this.token = '';
     this.username = '';
-    this.placeholder = 'Input your text here!'
+    this.placeholder = 'Input your text here!';
+    this.chatButtonText = 'send';
+    this.showButton = false;
   }
 
   connectedCallback() {
@@ -90,6 +94,10 @@ export class LiveChat extends LitElement {
         <p id="history" part="history"></p>
         <form @submit=${this.__sendMessage} id="form" part="form">
           <input type="text" name="msgTxt" placeholder="${this.placeholder}" id="msgTxt" part="input"></input>
+          ${this.showButton
+            ? html`<button type="submit" part="button">${this.buttonText}</button>`
+            : html``
+          }
         </form>
       </div>
     `;
