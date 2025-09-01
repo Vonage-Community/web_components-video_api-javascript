@@ -180,14 +180,14 @@ export class LivePollControl extends LitElement {
   render() {
     return html`
       <div id="container" part="container">
-        <h1>${this.pollTitleText}</h1>
-        <input .value="${live(this.pollTitleText)}" @input=${(e) => this.pollTitleText = e.target.value} ?disabled=${this.pollStarted} placeholder="${this.pollTitlePlaceholder}" id="poll-title" name="poll-title-input" part="poll-title-input"></input>
+        <h1 id="title-preview" part="title-preview">${this.pollTitleText}</h1>
+        <input .value="${live(this.pollTitleText)}" @input=${(e) => this.pollTitleText = e.target.value} ?disabled=${this.pollStarted} placeholder="${this.pollTitlePlaceholder}" id="poll-title" name="poll-title-input" part="title-input"></input>
         <ul id="options" part="options">
           ${this.options.map(
             (option, index) => html`
                 <li part="option">
-                  <input .value="${option.text}" ?disabled=${this.pollStarted} @input=${(e) => this.__updateOption(e, index)} id="option-text-${index}" name="option-text-${index}"></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-index="${index}" data-option="${option}" part="remove-button">${this.removeButtonText}</button>
-                  <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}">${option.votes}</output>
+                  <input .value="${option.text}" ?disabled=${this.pollStarted} @input=${(e) => this.__updateOption(e, index)} id="option-text-${index}" name="option-text-${index}" part="option-input"></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-index="${index}" data-option="${option}" part="remove-button">${this.removeButtonText}</button>
+                  <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100" part="option-progress">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}" part="option-output">${option.votes}</output>
                 </li>
               `
           )}
