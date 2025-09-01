@@ -1,8 +1,10 @@
 {
-  "name": "live-chat",
-  "description": "Webcomponent live-chat following open-wc recommendations",
+  "name": "@vonage/live-chat",
+  "description": "live-chat Web Component to be used with Video API following open-wc recommendations",
+  "homepage": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/live-chat#readme",
+  "repository": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/live-chat",
   "license": "MIT",
-  "author": "live-chat",
+  "author": "Vonage",
   "version": "0.0.0",
   "type": "module",
   "main": "index.js",

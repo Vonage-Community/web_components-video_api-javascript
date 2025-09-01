@@ -1,8 +1,10 @@
 {
-  "name": "live-poll",
-  "description": "Webcomponent live-poll following open-wc recommendations",
+  "name": "@vonage/live-poll",
+  "description": "live-poll Web Component to be used with Video API following open-wc recommendations",
+  "homepage": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/live-poll#readme",
+  "repository": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/live-poll",
   "license": "MIT",
-  "author": "live-poll",
+  "author": "Vonage",
   "version": "0.0.0",
   "type": "module",
   "main": "index.js",
