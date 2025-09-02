@@ -153,7 +153,7 @@ export class LivePoll extends LitElement {
           ${this.poll.options?.map(
             (option, index) => html`
                 <li part="option">
-                  <input type="radio" @click=${(e) => this.selectedOption = index} .value="${option.text}" id="option-text-${index}" name="option" ?disabled=${this.stopVote} part="radio" /><label for="option-text-${index}" part="label">${option.text}</label>
+                  <span part="option-container"><input type="radio" @click=${(e) => this.selectedOption = index} .value="${option.text}" id="option-text-${index}" name="option" ?disabled=${this.stopVote} part="radio" /><label for="option-text-${index}" part="label">${option.text}</label></span>
                   <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100" part="progress">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}" part="output">${option.votes}</output>
                 </li>
               `

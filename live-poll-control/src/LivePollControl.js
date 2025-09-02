@@ -182,15 +182,15 @@ export class LivePollControl extends LitElement {
           ${this.options.map(
             (option, index) => html`
                 <li part="option">
-                  <input .value="${option.text}" ?disabled=${this.pollStarted} @input=${(e) => this.__updateOption(e, index)} id="option-text-${index}" name="option-text-${index}" part="option-input"></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-index="${index}" data-option="${option}" part="button remove">${this.removeButtonText}</button>
-                  <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100" part="option-progress">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}" part="option-output">${option.votes}</output>
+                  <span part="option-container"><input .value="${option.text}" ?disabled=${this.pollStarted} @input=${(e) => this.__updateOption(e, index)} id="option-text-${index}" name="option-text-${index}" part="option-input"></input><button @click=${this.__removeOption} ?disabled=${this.pollStarted} data-index="${index}" data-option="${option}" part="button remove">${this.removeButtonText}</button></span>
+                  <progress id="option-progress-${index}" name="option-progress-${index}" value="${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100}" max="100" part="progress">${this.totalVotes === 0 ? 0 : (option.votes / this.totalVotes) * 100} %</progress><output name="option-result-${index}" for="option-progress-${index}" part="option-output">${option.votes}</output>
                 </li>
               `
           )}
         </ul>
         <form @submit=${this.__addOption} id="form" part="form">
-          <input type="text" name="optionTxt" placeholder="${this.placeholder}" id="optionTxt" part="input option" ?disabled=${this.pollStarted}></input>
-          <button type="submit" ?disabled=${this.pollStarted} part="button option">${this.inputButtonText}</button>
+          <input type="text" name="optionTxt" placeholder="${this.placeholder}" id="optionTxt" part="input-option" ?disabled=${this.pollStarted}></input>
+          <button type="submit" ?disabled=${this.pollStarted} part="button-option">${this.inputButtonText}</button>
         </form>
         ${
           this.pollStarted
