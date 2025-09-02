@@ -75,11 +75,27 @@ This is the HTML structure of the Web Component:
 <div>
 ```
 
-Here is how to apply CSS to a part:
+Here is how to apply CSS to a part and sample code:
 ```css
 live-poll-control {
   --live-poll-control-nth-child-odd-color: #dbd9d9;
   --live-poll-control-nth-child-even-color: #fcfcfc;
+}
+
+live-poll-control::part(options){
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+live-poll-control::part(option){
+  padding: 10px;
+}
+
+live-poll-control::part(option-container){
+  display: block;
 }
 
 live-poll-control::part(button) {
