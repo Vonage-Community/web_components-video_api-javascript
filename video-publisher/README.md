@@ -36,7 +36,7 @@ npm i @vonage/video-publisher
 
 ### Attributes that can be used (optional):
 
-- `auto-publish` : (String) whether to auto publish video when connected to session. Default is "true". For example, you can set to false and use the [<inputs-select>](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/inputs-select) component to set audio/video sources.
+- `auto-publish` : (String) whether to auto publish video when connected to session. Default is "true". For example, you can set to false and use the [\<inputs-select>](https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/inputs-select) component to set audio/video sources.
 - `properties` : (Object) the properties used to initialize the publisher. Find the full list in the [documentation](https://vonage.github.io/conversation-docs/video-js-reference/latest/OT.html#initPublisher).
 
 ```html

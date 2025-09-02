@@ -147,7 +147,7 @@ export class LivePoll extends LitElement {
 
   render() {
     return html`
-      <div part="container">
+      <div id="container" part="container">
         <p part="title">${this.poll.title}</p>
         <ul id="options" part="options">
           ${this.poll.options?.map(

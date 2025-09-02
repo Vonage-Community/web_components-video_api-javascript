@@ -60,7 +60,7 @@ This is the HTML structure of the Web Component:
   <input placeholder="enter poll title" id="poll-title" name="poll-title-input" part="title-input"></input>
   <ul id="options" part="options">
     <li part="option">
-      <input name="option-text-0" part="option-input"></input><button part="remove-button">remove</button>
+      <span part="option-container"><input name="option-text-0" part="option-input"></input><button part="remove-button">remove</button></span>
       <progress id="option-progress-0" name="option-progress-0" max="100" part="option-progress">70%</progress><output name="option-result-0" for="option-progress-0" part="option-output">7</output>
     </li>
   </ul>
@@ -77,6 +77,11 @@ This is the HTML structure of the Web Component:
 
 Here is how to apply CSS to a part:
 ```css
+live-poll-control {
+  --live-poll-control-nth-child-odd-color: #dbd9d9;
+  --live-poll-control-nth-child-even-color: #fcfcfc;
+}
+
 live-poll-control::part(button) {
   color: white;
   padding: 5px 15px;
