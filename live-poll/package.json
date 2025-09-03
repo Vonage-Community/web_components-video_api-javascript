@@ -1,0 +1,28 @@
+{
+  "name": "@vonage/live-poll",
+  "description": "live-poll Web Component to be used with Video API following open-wc recommendations",
+  "homepage": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/live-poll#readme",
+  "repository": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/live-poll",
+  "license": "MIT",
+  "author": "Vonage",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.js",
+  "module": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./live-poll.js": "./live-poll.js"
+  },
+  "scripts": {
+    "analyze": "cem analyze --litelement",
+    "start": "web-dev-server"
+  },
+  "dependencies": {
+    "lit": "^3.1.4"
+  },
+  "devDependencies": {
+    "@custom-elements-manifest/analyzer": "^0.10.3",
+    "@web/dev-server": "^0.4.6"
+  },
+  "customElements": "custom-elements.json"
+}
