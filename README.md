@@ -16,6 +16,9 @@ Please see each Web Component for individual installation instructions.
 * [screen-share](screen-share)
 * [inputs-select](inputs-select)
 * [white-board](white-board)
+* [live-chat](live-chat)
+* [live-poll](live-poll)
+* [live-poll-control](live-poll-control)
 
 ## Example Applications
 
