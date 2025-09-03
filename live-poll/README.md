@@ -32,6 +32,10 @@ npm i @vonage/live-poll
 <live-poll></live-poll>
 ```
 
+### Custom Event to listen for 
+
+- `poll-status` : status of the poll. Can be either started, stopped, resetted, closed, or vote.
+
 ## Styling
 
 The Web Component uses the [CSS pseudo-element `::part`](https://developer.mozilla.org/en-US/docs/Web/CSS/::part) for styling. So you can style it the same way you would style a regular button element. Here's an example:
