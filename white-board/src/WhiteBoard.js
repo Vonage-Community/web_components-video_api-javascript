@@ -135,6 +135,7 @@ export class WhiteBoard extends LitElement {
 
   updated(changedProperties) {
     if(changedProperties.get("session")){
+      console.log('Session updated:', this.session);
       this.session.connect(this.token);
 
       this.session.on('signal:wb-draw', (event) => {
