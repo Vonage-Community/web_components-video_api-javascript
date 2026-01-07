@@ -234,12 +234,12 @@ export class WhiteBoard extends LitElement {
   }
 
   clearCanvas(isRemote = false) {
-    console.log("Clearing canvas", this.session);
+    console.dir(this.session, isRemote);
     this.ctx.fillStyle = "#fff";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.imageSelect.value = null;
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-
+    console.log("Canvas cleared: ",!isRemote && this.session);
     if (!isRemote && this.session) {
       console.log("Sending clear signal");
       this.session.signal({ type: 'wb-clear', data: '1' });
