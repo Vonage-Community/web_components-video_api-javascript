@@ -325,6 +325,7 @@ export class WhiteBoard extends LitElement {
 
 
   startDrawing(e) {
+    console.log("Starting drawing at: ", e.offsetX, e.offsetY);
     if(this.isResized){
       this.isResized = false;
     }
@@ -452,6 +453,8 @@ export class WhiteBoard extends LitElement {
 
   continueDrawing(e) {
     if (!this.isDrawing) return;
+
+    console.log("Continuing drawing at: ", e.offsetX, e.offsetY);
     
     // Restore snapshot to clear "preview" shapes from previous frame
     this.ctx.putImageData(this.snapshot, 0, 0);
@@ -504,7 +507,9 @@ export class WhiteBoard extends LitElement {
     const x = e.offsetX;
     const y = e.offsetY;
     
-    // 7. Send Final Shape Signal
+    console.log("Stopping drawing at: ", x, y);
+
+    // Send Final Shape Signal
     // We do not send real-time rectangle/circle dragging to save bandwidth.
     // We only send the final shape.
     if (['rectangle', 'circle', 'triangle'].includes(this.selectedTool)) {
@@ -613,6 +618,7 @@ export class WhiteBoard extends LitElement {
 
   sendSignal(data) {
     if (this.session) {
+      console.log("Sending signal: ", data);
       this.session.signal({
         type: 'wb-draw',
         data: JSON.stringify(data)
@@ -623,6 +629,7 @@ export class WhiteBoard extends LitElement {
   }
 
   handleRemoteSignal(data) {
+    console.log("Received signal: ", data);
     const w = this.canvas.width;
     const h = this.canvas.height;
     
