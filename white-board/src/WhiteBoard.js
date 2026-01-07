@@ -792,7 +792,7 @@ export class WhiteBoard extends LitElement {
           @change="${this.selectImage}"
         />
         &nbsp; | &nbsp;
-        <button part="tools button clear"id="clear" @click="${this.clearCanvas}">${this.text.clear}</button>
+        <button part="tools button clear"id="clear" @click="${this.clearCanvas(false)}">${this.text.clear}</button>
         <button part="tools button save" id="save" @click="${this.saveCanvas}">${this.text.save}</button>
         <br />
         ${this.displaySourceButton()}
