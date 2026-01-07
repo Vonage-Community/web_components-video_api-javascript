@@ -138,6 +138,7 @@ export class WhiteBoard extends LitElement {
       this.session.connect(this.token);
 
       this.session.on('signal:wb-draw', (event) => {
+        console.log('wb-draw signal received:', event);
          // Ignore our own signals
          if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
          this.handleRemoteSignal(JSON.parse(event.data));
