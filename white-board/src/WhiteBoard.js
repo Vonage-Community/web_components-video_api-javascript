@@ -234,7 +234,7 @@ export class WhiteBoard extends LitElement {
   }
 
   clearCanvas(isRemote = false) {
-    console.log("Clearing canvas");
+    console.log("Clearing canvas", this.session);
     this.ctx.fillStyle = "#fff";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.imageSelect.value = null;
