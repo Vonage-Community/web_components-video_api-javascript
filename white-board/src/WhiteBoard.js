@@ -16,13 +16,13 @@ function throttle(func, limit) {
 export class WhiteBoard extends LitElement {
   static get properties() {
     return {
+      session: { type: Object },
+      token: { type: String},
       selectedTool: { type: String },
       strokeSize: { type: Number },
       isSourceSelected: { type: Boolean },
       isSharing: { type: Boolean },
       publisher: {},
-      session: {},
-      token: {},
       properties: { type: Object },
       text: { type: Object },
     }
@@ -62,6 +62,8 @@ export class WhiteBoard extends LitElement {
   }
   constructor() {
     super();
+    this.session = {};
+    this.token = '';
     this.count = 0;
     this.canvas;
     this.ctx;
