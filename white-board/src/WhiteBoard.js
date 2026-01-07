@@ -109,7 +109,7 @@ export class WhiteBoard extends LitElement {
 
     this.isResized = false;
     this.resizeObserver = new ResizeObserver(this._handleResize);
-    this.throttledSignal = throttle(this.sendSignal, 50);
+    this.throttledSignal = throttle(this.sendSignal, 5);
   }
 
 
