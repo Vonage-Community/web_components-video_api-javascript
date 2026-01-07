@@ -1,5 +1,18 @@
 import { LitElement, html, css } from "lit";
 
+function throttle(func, limit) {
+  let inThrottle;
+  return function() {
+    const args = arguments;
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  }
+}
+
 export class WhiteBoard extends LitElement {
   static get properties() {
     return {
@@ -94,6 +107,7 @@ export class WhiteBoard extends LitElement {
 
     this.isResized = false;
     this.resizeObserver = new ResizeObserver(this._handleResize);
+    this.throttledSignal = throttle(this.sendSignal, 50);
   }
 
 
@@ -122,6 +136,17 @@ export class WhiteBoard extends LitElement {
   updated(changedProperties) {
     if(changedProperties.get("session")){
       this.session.connect(this.token);
+
+      this.session.on('signal:wb-draw', (event) => {
+         // Ignore our own signals
+         if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
+         this.handleRemoteSignal(JSON.parse(event.data));
+      });
+
+      this.session.on('signal:wb-clear', (event) => {
+        if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
+        this.clearCanvas(true); // true = skip sending signal back
+      });
     }
   }
 
@@ -204,31 +229,55 @@ export class WhiteBoard extends LitElement {
     img.src = path;
   }
 
-  clearCanvas() {
+  clearCanvas(isRemote = false) {
     this.ctx.fillStyle = "#fff";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.imageSelect.value = null;
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+
+    if (!isRemote && this.session) {
+        this.session.signal({ type: 'wb-clear', data: '1' });
+    }
   }
 
   saveCanvas() {
     const link = document.createElement('a');
     link.download = `${Date.now()}.jpg`;
-    if (this.isSourceSelected) {
-      let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-      const mergedData = this.mergeCanvases(this.snapshot, videoData);
-      this.mergedCtx.putImageData(mergedData, 0, 0);
-      link.href = this.mergedCanvas.toDataURL();
-    } else {
+    
+    // Reset video ctx if needed
+    if (!this.isSourceSelected) {
       this.videoCtx.fillStyle = '#fff';
       this.videoCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-      const mergedData = this.mergeCanvases(this.snapshot, videoData);
-      this.mergedCtx.putImageData(mergedData, 0, 0);
-      link.href = this.mergedCanvas.toDataURL();
     }
+    
+    let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    // Use current state of canvas (handled by logic below) instead of old snapshot
+    const currentBoard = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    
+    const mergedData = this.mergeCanvases(currentBoard, videoData);
+    this.mergedCtx.putImageData(mergedData, 0, 0);
+    link.href = this.mergedCanvas.toDataURL();
     link.click();
   }
+
+  // saveCanvas() {
+  //   const link = document.createElement('a');
+  //   link.download = `${Date.now()}.jpg`;
+  //   if (this.isSourceSelected) {
+  //     let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  //     const mergedData = this.mergeCanvases(this.snapshot, videoData);
+  //     this.mergedCtx.putImageData(mergedData, 0, 0);
+  //     link.href = this.mergedCanvas.toDataURL();
+  //   } else {
+  //     this.videoCtx.fillStyle = '#fff';
+  //     this.videoCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  //     let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  //     const mergedData = this.mergeCanvases(this.snapshot, videoData);
+  //     this.mergedCtx.putImageData(mergedData, 0, 0);
+  //     link.href = this.mergedCanvas.toDataURL();
+  //   }
+  //   link.click();
+  // }
 
   mergeCanvases(top, bottom) {
     const tD = top.data;
@@ -249,16 +298,31 @@ export class WhiteBoard extends LitElement {
     return bottom;
   }
 
+  // drawFrame = () => {
+  //   if (this.canvas.width !== 0 && this.canvas.height !== 0){
+  //     const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  //     this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
+  //     const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+  //     const mergedData = this.mergeCanvases(whiteboardData, videoData);
+  //     this.mergedCtx.putImageData(mergedData, 0, 0);
+  //   }
+  //   this.rafId = requestAnimationFrame(this.drawFrame);
+  // }
+
   drawFrame = () => {
     if (this.canvas.width !== 0 && this.canvas.height !== 0){
-      const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-      this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
-      const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
-      const mergedData = this.mergeCanvases(whiteboardData, videoData);
-      this.mergedCtx.putImageData(mergedData, 0, 0);
+      // Only merge for display if source is selected, otherwise we waste CPU
+      if(this.isSourceSelected) {
+          const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+          this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
+          const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+          const mergedData = this.mergeCanvases(whiteboardData, videoData);
+          this.mergedCtx.putImageData(mergedData, 0, 0);
+      }
     }
     this.rafId = requestAnimationFrame(this.drawFrame);
   }
+
 
   startDrawing(e) {
     if(this.isResized){
@@ -274,6 +338,225 @@ export class WhiteBoard extends LitElement {
     if (!this.isSourceSelected) {
       this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height)
     }
+    this.sendSignal({
+      t: 'down',
+      x: e.offsetX / this.canvas.width,
+      y: e.offsetY / this.canvas.height,
+      c: this.selectedColor,
+      s: this.strokeSize,
+      tl: this.selectedTool
+    });
+  }
+
+  // placeText(e) {
+  //   if (this.selectedTool === 'text') {
+  //     const textXPos = e.clientX;
+  //     const textYPos = e.clientY;
+  //     const textInput = document.createElement('input');
+
+  //     textInput.setAttribute('type', 'text');
+  //     textInput.style.position = 'fixed';
+  //     textInput.style.top = e.clientY + 'px';
+  //     textInput.style.left = e.clientX + 'px';
+  //     textInput.style.background = 'rgba(255,255,255, .5)';
+  //     textInput.style.width = '100px';
+  //     textInput.style.maxWidth = '200px';
+  //     textInput.style.border = '1px dashed red';
+  //     textInput.style.fontSize = '16px';
+  //     textInput.style.color = self.userColor;
+  //     textInput.style.fontFamily = 'Arial';
+  //     textInput.style.zIndex = '1001';
+
+  //     this.renderRoot?.querySelector('#canvas-container').appendChild(textInput);
+  //     textInput.focus();
+
+  //     textInput.addEventListener('keydown', (event) => {
+  //       if (event.which === 13) {
+  //         const { x, y } = this.renderRoot?.querySelector('#canvas').getBoundingClientRect();
+  //         this.ctx.font = `${this.strokeSize * 10}px serif`;
+  //         this.ctx.fillStyle = this.selectedColor;
+  //         this.ctx.fillText(textInput.value, textXPos - x, textYPos - y);
+  //         this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  //         textInput.remove();
+  //         return;
+  //       }
+  //     });
+  //     textInput.addEventListener('blur', () => {});
+  //   }
+
+  // }
+
+  // drawRectangle(e) {
+  //   this.ctx.strokeStyle = this.selectedColor;
+  //   if (!this.fillInColor.checked) {
+  //     this.ctx.strokeRect(
+  //       e.offsetX,
+  //       e.offsetY,
+  //       this.prevXpos - e.offsetX,
+  //       this.prevYpos - e.offsetY
+  //     );
+  //   } else {
+  //     this.ctx.fillRect(
+  //       e.offsetX,
+  //       e.offsetY,
+  //       this.prevXpos - e.offsetX,
+  //       this.prevYpos - e.offsetY
+  //     );
+  //   }
+  // }
+
+  // drawCircle(e) {
+  //   this.ctx.beginPath();
+  //   let radius = Math.sqrt(
+  //     Math.pow(this.prevXpos - e.offsetX, 2) + Math.pow(this.prevYpos - e.offsetY, 2)
+  //   );
+  //   this.ctx.arc(this.prevXpos, this.prevYpos, radius, 0, 2 * Math.PI);
+  //   this.ctx.stroke();
+  //   this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
+  // }
+
+  // drawTriangle(e) {
+  //   this.ctx.beginPath();
+  //   this.ctx.moveTo(this.prevXpos, this.prevYpos);
+  //   this.ctx.lineTo(e.offsetX, e.offsetY);
+  //   this.ctx.lineTo(this.prevXpos * 2 - e.offsetX, e.offsetY);
+  //   this.ctx.closePath();
+  //   this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
+  // }
+
+  // continueDrawing(e) {
+  //   if (!this.isDrawing) return;
+
+  //   // Restore snapshot to clear "preview" shapes from previous frame
+  //   this.ctx.putImageData(this.snapshot, 0, 0);
+
+  //   switch (this.selectedTool) {
+  //     case "pen":
+  //     case "eraser":
+  //       this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
+  //       this.ctx.lineTo(e.offsetX, e.offsetY);
+  //       this.ctx.stroke();
+  //       break;
+  //     case "rectangle":
+  //       this.drawRectangle(e);
+  //       break;
+  //     case "circle":
+  //       this.drawCircle(e);
+  //       break;
+  //     case "triangle":
+  //       this.drawTriangle(e);
+  //       break;
+  //   }
+
+  // }
+
+  continueDrawing(e) {
+    if (!this.isDrawing) return;
+    
+    // Restore snapshot to clear "preview" shapes from previous frame
+    this.ctx.putImageData(this.snapshot, 0, 0);
+
+    const x = e.offsetX;
+    const y = e.offsetY;
+
+    switch (this.selectedTool) {
+      case "pen":
+      case "eraser":
+        this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
+        this.ctx.lineTo(x, y);
+        this.ctx.stroke();
+        
+        // 6. Send Throttled 'Move' Signal for Pen
+        // We send a segment from Prev to Curr to avoid gaps
+        this.throttledSignal({
+            t: 'move',
+            x: x / this.canvas.width,
+            y: y / this.canvas.height,
+            px: this.prevXpos / this.canvas.width,
+            py: this.prevYpos / this.canvas.height,
+            c: this.selectedTool === 'eraser' ? '#fff' : this.selectedColor,
+            s: this.strokeSize
+        });
+        
+        // Update prevPos explicitly for the next segment
+        this.prevXpos = x; 
+        this.prevYpos = y;
+        break;
+      case "rectangle":
+        this.drawRectangle(x, y, this.prevXpos, this.prevYpos);
+        break;
+      case "circle":
+        this.drawCircle(x, y, this.prevXpos, this.prevYpos);
+        break;
+      case "triangle":
+        this.drawTriangle(x, y, this.prevXpos, this.prevYpos);
+        break;
+    }
+  }
+
+  // stopDrawing() {
+  //   this.isDrawing = false;
+  //   this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  // }
+
+  stopDrawing(e) {
+    if(!this.isDrawing) return; // safety
+    const x = e.offsetX;
+    const y = e.offsetY;
+    
+    // 7. Send Final Shape Signal
+    // We do not send real-time rectangle/circle dragging to save bandwidth.
+    // We only send the final shape.
+    if (['rectangle', 'circle', 'triangle'].includes(this.selectedTool)) {
+        this.sendSignal({
+            t: 'shape',
+            tl: this.selectedTool,
+            x: x / this.canvas.width,
+            y: y / this.canvas.height,
+            px: this.prevXpos / this.canvas.width,
+            py: this.prevYpos / this.canvas.height,
+            c: this.selectedColor,
+            s: this.strokeSize,
+            f: this.fillInColor.checked
+        });
+    } else {
+        // Pen Up signal
+        this.sendSignal({ t: 'up' });
+    }
+
+    this.isDrawing = false;
+    // Save state
+    this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  // --- DRAWING HELPERS ---
+  
+  drawRectangle(x, y, startX, startY) {
+    this.ctx.lineWidth = this.strokeSize; // Ensure context is current
+    if (!this.fillInColor.checked) {
+      this.ctx.strokeRect(x, y, startX - x, startY - y);
+    } else {
+      this.ctx.fillRect(x, y, startX - x, startY - y);
+    }
+  }
+
+  drawCircle(x, y, startX, startY) {
+    this.ctx.lineWidth = this.strokeSize;
+    this.ctx.beginPath();
+    let radius = Math.sqrt(Math.pow(startX - x, 2) + Math.pow(startY - y, 2));
+    this.ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+    this.ctx.stroke();
+    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
+  }
+
+  drawTriangle(x, y, startX, startY) {
+    this.ctx.lineWidth = this.strokeSize;
+    this.ctx.beginPath();
+    this.ctx.moveTo(startX, startY);
+    this.ctx.lineTo(x, y);
+    this.ctx.lineTo(startX * 2 - x, y);
+    this.ctx.closePath();
+    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
   }
 
   placeText(e) {
@@ -291,7 +574,7 @@ export class WhiteBoard extends LitElement {
       textInput.style.maxWidth = '200px';
       textInput.style.border = '1px dashed red';
       textInput.style.fontSize = '16px';
-      textInput.style.color = self.userColor;
+      textInput.style.color = this.selectedColor;
       textInput.style.fontFamily = 'Arial';
       textInput.style.zIndex = '1001';
 
@@ -301,83 +584,90 @@ export class WhiteBoard extends LitElement {
       textInput.addEventListener('keydown', (event) => {
         if (event.which === 13) {
           const { x, y } = this.renderRoot?.querySelector('#canvas').getBoundingClientRect();
+          const relativeX = textXPos - x;
+          const relativeY = textYPos - y;
+          
           this.ctx.font = `${this.strokeSize * 10}px serif`;
           this.ctx.fillStyle = this.selectedColor;
-          this.ctx.fillText(textInput.value, textXPos - x, textYPos - y);
+          this.ctx.fillText(textInput.value, relativeX, relativeY);
+          
+          // Send Text Signal
+          this.sendSignal({
+              t: 'text',
+              txt: textInput.value,
+              x: relativeX / this.canvas.width,
+              y: relativeY / this.canvas.height,
+              c: this.selectedColor,
+              s: this.strokeSize
+          });
+
           this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
           textInput.remove();
-          return;
         }
       });
-      textInput.addEventListener('blur', () => {});
-    }
-
-  }
-
-  drawRectangle(e) {
-    this.ctx.strokeStyle = this.selectedColor;
-    if (!this.fillInColor.checked) {
-      this.ctx.strokeRect(
-        e.offsetX,
-        e.offsetY,
-        this.prevXpos - e.offsetX,
-        this.prevYpos - e.offsetY
-      );
-    } else {
-      this.ctx.fillRect(
-        e.offsetX,
-        e.offsetY,
-        this.prevXpos - e.offsetX,
-        this.prevYpos - e.offsetY
-      );
+      textInput.addEventListener('blur', () => textInput.remove());
     }
   }
 
-  drawCircle(e) {
-    this.ctx.beginPath();
-    let radius = Math.sqrt(
-      Math.pow(this.prevXpos - e.offsetX, 2) + Math.pow(this.prevYpos - e.offsetY, 2)
-    );
-    this.ctx.arc(this.prevXpos, this.prevYpos, radius, 0, 2 * Math.PI);
-    this.ctx.stroke();
-    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
+  // --- SIGNALING CORE ---
+
+  sendSignal(data) {
+    if (this.session) {
+      this.session.signal({
+        type: 'wb-draw',
+        data: JSON.stringify(data)
+      }, (error) => {
+        if (error) console.error("Signal error: " + error.message);
+      });
+    }
   }
 
-  drawTriangle(e) {
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.prevXpos, this.prevYpos);
-    this.ctx.lineTo(e.offsetX, e.offsetY);
-    this.ctx.lineTo(this.prevXpos * 2 - e.offsetX, e.offsetY);
-    this.ctx.closePath();
-    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
-  }
+  handleRemoteSignal(data) {
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    
+    // Denormalize coordinates
+    const x = data.x * w;
+    const y = data.y * h;
+    const px = data.px * w;
+    const py = data.py * h;
 
-  continueDrawing(e) {
-    if (!this.isDrawing) return;
-    this.ctx.putImageData(this.snapshot, 0, 0);
+    // Save current context settings
+    this.ctx.save();
+    this.ctx.strokeStyle = data.c;
+    this.ctx.fillStyle = data.c;
+    this.ctx.lineWidth = data.s;
 
-    switch (this.selectedTool) {
-      case "pen":
-      case "eraser":
-        this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
-        this.ctx.lineTo(e.offsetX, e.offsetY);
+    if (data.t === 'down') {
+        this.ctx.beginPath();
+        this.ctx.moveTo(x, y);
+    } 
+    else if (data.t === 'move') {
+        this.ctx.beginPath();
+        this.ctx.moveTo(px, py); // Draw segment from previous to current
+        this.ctx.lineTo(x, y);
         this.ctx.stroke();
-        break;
-      case "rectangle":
-        this.drawRectangle(e);
-        break;
-      case "circle":
-        this.drawCircle(e);
-        break;
-      case "triangle":
-        this.drawTriangle(e);
-        break;
+        this.ctx.closePath();
+    }
+    else if (data.t === 'shape') {
+        const tempCheck = this.fillInColor.checked;
+        this.fillInColor.checked = data.f; // Temporarily switch fill state
+        if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
+        if(data.tl === 'circle') this.drawCircle(x, y, px, py);
+        if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
+        this.fillInColor.checked = tempCheck; // Restore
+    }
+    else if (data.t === 'text') {
+        this.ctx.font = `${data.s * 10}px serif`;
+        this.ctx.fillText(data.txt, x, y);
     }
 
-  }
+    this.ctx.restore();
 
-  stopDrawing() {
-    this.isDrawing = false;
+    // CRITICAL FIX:
+    // Because 'continueDrawing' relies on putImageData(snapshot),
+    // we must update the snapshot immediately after a remote draw.
+    // If we don't, the local user's next mouse move will wipe the remote drawing.
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
   }
 
@@ -393,7 +683,7 @@ export class WhiteBoard extends LitElement {
 
   clearSource() {
     const tracks = this.videoEl.srcObject.getTracks();
-    tracks.forEach((track) => track.stop());
+    if(tracks) tracks.forEach((track) => track.stop());
     this.isSourceSelected = false;
     this.videoEl.srcObject = null;
     this.videoCtx.fillStyle = '#fff';
