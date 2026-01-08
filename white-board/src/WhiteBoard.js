@@ -110,6 +110,9 @@ export class WhiteBoard extends LitElement {
     this.isResized = false;
     this.resizeObserver = new ResizeObserver(this._handleResize);
     this.throttledSignal = throttle(this.sendSignal, 30); // 30ms throttle
+    // Track the last known position of every remote user
+    // Format: { "connectionId": { x: 0.5, y: 0.5 } }
+    this.remoteCursors = {};
   }
 
 
@@ -144,7 +147,7 @@ export class WhiteBoard extends LitElement {
         console.log('wb-draw signal received:', event);
          // Ignore our own signals
          if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
-         this.handleRemoteSignal(JSON.parse(event.data));
+         this.handleRemoteSignal(JSON.parse(event.data), event.from.connectionId);
       });
 
       this.session.on('signal:wb-clear', (event) => {
@@ -489,40 +492,97 @@ export class WhiteBoard extends LitElement {
 
   // }
 
+  // continueDrawing(e) {
+  //   if (!this.isDrawing) return;
+
+  //   console.log("Continuing drawing at: ", e.offsetX, e.offsetY);
+    
+  //   // Restore snapshot to clear "preview" shapes from previous frame
+  //   this.ctx.putImageData(this.snapshot, 0, 0);
+
+  //   const x = e.offsetX;
+  //   const y = e.offsetY;
+
+  //   switch (this.selectedTool) {
+  //     case "pen":
+  //     case "eraser":
+  //       this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
+  //       this.ctx.lineTo(x, y);
+  //       this.ctx.stroke();
+        
+  //       // 6. Send Throttled 'Move' Signal for Pen
+  //       // We send a segment from Prev to Curr to avoid gaps
+  //       this.throttledSignal({
+  //           t: 'move',
+  //           x: x / this.canvas.width,
+  //           y: y / this.canvas.height,
+  //           px: this.prevXpos / this.canvas.width,
+  //           py: this.prevYpos / this.canvas.height,
+  //           c: this.selectedTool === 'eraser' ? '#fff' : this.selectedColor,
+  //           s: this.strokeSize
+  //       });
+        
+  //       // Update prevPos explicitly for the next segment
+  //       this.prevXpos = x; 
+  //       this.prevYpos = y;
+  //       break;
+  //     case "rectangle":
+  //       this.drawRectangle(x, y, this.prevXpos, this.prevYpos);
+  //       break;
+  //     case "circle":
+  //       this.drawCircle(x, y, this.prevXpos, this.prevYpos);
+  //       break;
+  //     case "triangle":
+  //       this.drawTriangle(x, y, this.prevXpos, this.prevYpos);
+  //       break;
+  //   }
+  // }
+
+
   continueDrawing(e) {
     if (!this.isDrawing) return;
-
-    console.log("Continuing drawing at: ", e.offsetX, e.offsetY);
     
-    // Restore snapshot to clear "preview" shapes from previous frame
-    this.ctx.putImageData(this.snapshot, 0, 0);
-
     const x = e.offsetX;
     const y = e.offsetY;
+
+    // FIX 1: Only restore the snapshot (wipe canvas) for Shapes.
+    // For Pen/Eraser, we want to KEEP the pixels we just drew.
+    if (['rectangle', 'circle', 'triangle'].includes(this.selectedTool)) {
+        this.ctx.putImageData(this.snapshot, 0, 0);
+    }
 
     switch (this.selectedTool) {
       case "pen":
       case "eraser":
         this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
+        this.ctx.lineWidth = this.strokeSize;
+        this.ctx.lineCap = "round";
+        this.ctx.lineJoin = "round";
+        
+        // FIX 2: Explicitly start a new path for this segment.
+        // This prevents 'handleRemoteSignal' from breaking our path state.
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.prevXpos, this.prevYpos);
         this.ctx.lineTo(x, y);
         this.ctx.stroke();
+        this.ctx.closePath();
         
-        // 6. Send Throttled 'Move' Signal for Pen
-        // We send a segment from Prev to Curr to avoid gaps
+        // Send the signal (Throttled)
         this.throttledSignal({
             t: 'move',
             x: x / this.canvas.width,
             y: y / this.canvas.height,
-            px: this.prevXpos / this.canvas.width,
-            py: this.prevYpos / this.canvas.height,
+            // We NO LONGER rely on sending 'px/py' here for connectivity.
+            // The receiver will handle the gaps.
             c: this.selectedTool === 'eraser' ? '#fff' : this.selectedColor,
             s: this.strokeSize
         });
         
-        // Update prevPos explicitly for the next segment
+        // Update prevPos for the next segment
         this.prevXpos = x; 
         this.prevYpos = y;
         break;
+        
       case "rectangle":
         this.drawRectangle(x, y, this.prevXpos, this.prevYpos);
         break;
@@ -716,49 +776,119 @@ export class WhiteBoard extends LitElement {
   //   this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
   // }
 
-  handleRemoteSignal(data) {
+  // handleRemoteSignal(data) {
+  //   const w = this.canvas.width;
+  //   const h = this.canvas.height;
+    
+  //   // Denormalize coordinates
+  //   const x = data.x * w;
+  //   const y = data.y * h;
+  //   const px = data.px * w;
+  //   const py = data.py * h;
+
+  //   this.ctx.save();
+  //   this.ctx.strokeStyle = data.c;
+  //   this.ctx.fillStyle = data.c;
+  //   this.ctx.lineWidth = data.s;
+  //   this.ctx.lineCap = "round"; // IMPORTANT: Makes segments blend better
+  //   this.ctx.lineJoin = "round";
+
+  //   if (data.t === 'down') {
+  //       this.ctx.beginPath();
+  //       this.ctx.moveTo(x, y);
+  //       // We just move to the start point, no drawing yet
+  //   } 
+  //   else if (data.t === 'move') {
+  //       this.ctx.beginPath();
+  //       this.ctx.moveTo(px, py);
+
+  //       // --- SMOOTHING MAGIC ---
+  //       // Instead of a straight line to (x,y), we calculate the midpoint
+  //       // and curve towards it. This removes the jagged "polygon" look.
+        
+  //       const midPointX = (px + x) / 2;
+  //       const midPointY = (py + y) / 2;
+        
+  //       this.ctx.quadraticCurveTo(px, py, midPointX, midPointY);
+  //       this.ctx.lineTo(x, y); 
+  //       // -----------------------
+        
+  //       this.ctx.stroke();
+  //       this.ctx.closePath();
+  //   }
+  //   else if (data.t === 'shape') {
+  //       const tempCheck = this.fillInColor.checked;
+  //       this.fillInColor.checked = data.f; 
+  //       if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
+  //       if(data.tl === 'circle') this.drawCircle(x, y, px, py);
+  //       if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
+  //       this.fillInColor.checked = tempCheck;
+  //   }
+  //   else if (data.t === 'text') {
+  //       this.ctx.font = `${data.s * 10}px serif`;
+  //       this.ctx.fillText(data.txt, x, y);
+  //   }
+
+  //   this.ctx.restore();
+
+  //   // Update the snapshot so the next frame includes this new line
+  //   this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  // }
+
+
+  handleRemoteSignal(data, fromConnectionId) {
     const w = this.canvas.width;
     const h = this.canvas.height;
     
-    // Denormalize coordinates
+    // Current target coordinates
     const x = data.x * w;
     const y = data.y * h;
-    const px = data.px * w;
-    const py = data.py * h;
 
     this.ctx.save();
     this.ctx.strokeStyle = data.c;
     this.ctx.fillStyle = data.c;
     this.ctx.lineWidth = data.s;
-    this.ctx.lineCap = "round"; // IMPORTANT: Makes segments blend better
+    this.ctx.lineCap = "round";
     this.ctx.lineJoin = "round";
 
     if (data.t === 'down') {
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        // We just move to the start point, no drawing yet
+        // Just store the starting point. Don't draw yet.
+        this.remoteCursors[fromConnectionId] = { x: x, y: y };
     } 
     else if (data.t === 'move') {
-        this.ctx.beginPath();
-        this.ctx.moveTo(px, py);
-
-        // --- SMOOTHING MAGIC ---
-        // Instead of a straight line to (x,y), we calculate the midpoint
-        // and curve towards it. This removes the jagged "polygon" look.
+        // FIX 3: Retrieve the LAST position we saw for this specific user
+        const lastPos = this.remoteCursors[fromConnectionId];
         
-        const midPointX = (px + x) / 2;
-        const midPointY = (py + y) / 2;
+        if (lastPos) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(lastPos.x, lastPos.y);
+            
+            // Quadratic Curve for smoothness
+            const midPointX = (lastPos.x + x) / 2;
+            const midPointY = (lastPos.y + y) / 2;
+            this.ctx.quadraticCurveTo(lastPos.x, lastPos.y, midPointX, midPointY);
+            
+            this.ctx.lineTo(x, y); 
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
         
-        this.ctx.quadraticCurveTo(px, py, midPointX, midPointY);
-        this.ctx.lineTo(x, y); 
-        // -----------------------
-        
-        this.ctx.stroke();
-        this.ctx.closePath();
+        // Update their position for the next frame
+        this.remoteCursors[fromConnectionId] = { x: x, y: y };
+    }
+    else if (data.t === 'up') {
+        // User finished drawing, clear their cursor history
+        delete this.remoteCursors[fromConnectionId];
     }
     else if (data.t === 'shape') {
+        // ... (existing shape logic) ...
         const tempCheck = this.fillInColor.checked;
         this.fillInColor.checked = data.f; 
+        // Note: For shapes, we still rely on 'px' sent in data because shapes aren't throttled
+        // But we need to denormalize px here if you kept it in the payload
+        const px = data.px * w; 
+        const py = data.py * h;
+        
         if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
         if(data.tl === 'circle') this.drawCircle(x, y, px, py);
         if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
@@ -771,10 +901,10 @@ export class WhiteBoard extends LitElement {
 
     this.ctx.restore();
 
-    // Update the snapshot so the next frame includes this new line
+    // Update snapshot to bake in the remote changes
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
   }
-  
+
   async selectSource() {
     try {
       this.videoEl.srcObject = await navigator.mediaDevices.getDisplayMedia();
