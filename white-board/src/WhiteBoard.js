@@ -109,7 +109,7 @@ export class WhiteBoard extends LitElement {
 
     this.isResized = false;
     this.resizeObserver = new ResizeObserver(this._handleResize);
-    this.throttledSignal = throttle(this.sendSignal, 5);
+    this.throttledSignal = throttle(this.sendSignal, 30); // 30ms throttle
   }
 
 
@@ -666,8 +666,57 @@ export class WhiteBoard extends LitElement {
     }
   }
 
+  // handleRemoteSignal(data) {
+  //   console.log("Received signal: ", data);
+  //   const w = this.canvas.width;
+  //   const h = this.canvas.height;
+    
+  //   // Denormalize coordinates
+  //   const x = data.x * w;
+  //   const y = data.y * h;
+  //   const px = data.px * w;
+  //   const py = data.py * h;
+
+  //   // Save current context settings
+  //   this.ctx.save();
+  //   this.ctx.strokeStyle = data.c;
+  //   this.ctx.fillStyle = data.c;
+  //   this.ctx.lineWidth = data.s;
+
+  //   if (data.t === 'down') {
+  //       this.ctx.beginPath();
+  //       this.ctx.moveTo(x, y);
+  //   } 
+  //   else if (data.t === 'move') {
+  //       this.ctx.beginPath();
+  //       this.ctx.moveTo(px, py); // Draw segment from previous to current
+  //       this.ctx.lineTo(x, y);
+  //       this.ctx.stroke();
+  //       this.ctx.closePath();
+  //   }
+  //   else if (data.t === 'shape') {
+  //       const tempCheck = this.fillInColor.checked;
+  //       this.fillInColor.checked = data.f; // Temporarily switch fill state
+  //       if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
+  //       if(data.tl === 'circle') this.drawCircle(x, y, px, py);
+  //       if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
+  //       this.fillInColor.checked = tempCheck; // Restore
+  //   }
+  //   else if (data.t === 'text') {
+  //       this.ctx.font = `${data.s * 10}px serif`;
+  //       this.ctx.fillText(data.txt, x, y);
+  //   }
+
+  //   this.ctx.restore();
+
+  //   // CRITICAL FIX:
+  //   // Because 'continueDrawing' relies on putImageData(snapshot),
+  //   // we must update the snapshot immediately after a remote draw.
+  //   // If we don't, the local user's next mouse move will wipe the remote drawing.
+  //   this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  // }
+
   handleRemoteSignal(data) {
-    console.log("Received signal: ", data);
     const w = this.canvas.width;
     const h = this.canvas.height;
     
@@ -677,30 +726,43 @@ export class WhiteBoard extends LitElement {
     const px = data.px * w;
     const py = data.py * h;
 
-    // Save current context settings
     this.ctx.save();
     this.ctx.strokeStyle = data.c;
     this.ctx.fillStyle = data.c;
     this.ctx.lineWidth = data.s;
+    this.ctx.lineCap = "round"; // IMPORTANT: Makes segments blend better
+    this.ctx.lineJoin = "round";
 
     if (data.t === 'down') {
         this.ctx.beginPath();
         this.ctx.moveTo(x, y);
+        // We just move to the start point, no drawing yet
     } 
     else if (data.t === 'move') {
         this.ctx.beginPath();
-        this.ctx.moveTo(px, py); // Draw segment from previous to current
-        this.ctx.lineTo(x, y);
+        this.ctx.moveTo(px, py);
+
+        // --- SMOOTHING MAGIC ---
+        // Instead of a straight line to (x,y), we calculate the midpoint
+        // and curve towards it. This removes the jagged "polygon" look.
+        
+        const midPointX = (px + x) / 2;
+        const midPointY = (py + y) / 2;
+        
+        this.ctx.quadraticCurveTo(px, py, midPointX, midPointY);
+        this.ctx.lineTo(x, y); 
+        // -----------------------
+        
         this.ctx.stroke();
         this.ctx.closePath();
     }
     else if (data.t === 'shape') {
         const tempCheck = this.fillInColor.checked;
-        this.fillInColor.checked = data.f; // Temporarily switch fill state
+        this.fillInColor.checked = data.f; 
         if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
         if(data.tl === 'circle') this.drawCircle(x, y, px, py);
         if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
-        this.fillInColor.checked = tempCheck; // Restore
+        this.fillInColor.checked = tempCheck;
     }
     else if (data.t === 'text') {
         this.ctx.font = `${data.s * 10}px serif`;
@@ -709,13 +771,10 @@ export class WhiteBoard extends LitElement {
 
     this.ctx.restore();
 
-    // CRITICAL FIX:
-    // Because 'continueDrawing' relies on putImageData(snapshot),
-    // we must update the snapshot immediately after a remote draw.
-    // If we don't, the local user's next mouse move will wipe the remote drawing.
+    // Update the snapshot so the next frame includes this new line
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
   }
-
+  
   async selectSource() {
     try {
       this.videoEl.srcObject = await navigator.mediaDevices.getDisplayMedia();
