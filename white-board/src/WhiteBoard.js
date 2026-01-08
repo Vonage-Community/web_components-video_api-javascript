@@ -316,20 +316,51 @@ export class WhiteBoard extends LitElement {
   //   this.rafId = requestAnimationFrame(this.drawFrame);
   // }
 
+  // drawFrame = () => {
+  //   if (this.canvas.width !== 0 && this.canvas.height !== 0){
+  //     // Only merge for display if source is selected, otherwise we waste CPU
+  //     if(this.isSourceSelected) {
+  //         const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  //         this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
+  //         const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+  //         const mergedData = this.mergeCanvases(whiteboardData, videoData);
+  //         this.mergedCtx.putImageData(mergedData, 0, 0);
+  //     }
+  //   }
+  //   this.rafId = requestAnimationFrame(this.drawFrame);
+  // }
+
+
   drawFrame = () => {
     if (this.canvas.width !== 0 && this.canvas.height !== 0){
-      // Only merge for display if source is selected, otherwise we waste CPU
+      
+      // 1. Always get the whiteboard drawing
+      const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+      
+      // 2. Prepare the background (Video or White)
       if(this.isSourceSelected) {
-          const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+          // Draw the live video feed
           this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
-          const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
-          const mergedData = this.mergeCanvases(whiteboardData, videoData);
-          this.mergedCtx.putImageData(mergedData, 0, 0);
+      } else {
+          // Ensure background is solid white if no video is selected
+          // (This is crucial so we don't merge transparency on transparency)
+          this.videoCtx.fillStyle = '#fff';
+          this.videoCtx.fillRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
       }
+
+      // 3. Get the background data
+      const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+      
+      // 4. Merge them (Whiteboard + Background)
+      const mergedData = this.mergeCanvases(whiteboardData, videoData);
+      
+      // 5. Paint the result to the Publisher's canvas
+      this.mergedCtx.putImageData(mergedData, 0, 0);
     }
+    
+    // Loop
     this.rafId = requestAnimationFrame(this.drawFrame);
   }
-
 
   startDrawing(e) {
     console.log("Starting drawing at: ", e.offsetX, e.offsetY);
