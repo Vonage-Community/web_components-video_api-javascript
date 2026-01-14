@@ -5,7 +5,7 @@
   "repository": "https://github.com/Vonage-Community/web_components-video_api-javascript/tree/main/white-board",
   "license": "MIT",
   "author": "Vonage",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "type": "module",
   "main": "index.js",
   "module": "index.js",
