@@ -140,17 +140,16 @@ export class WhiteBoard extends LitElement {
 
   updated(changedProperties) {
     if(changedProperties.get("session")){
-      console.log('Session updated:', this.session);
       this.session.connect(this.token);
 
       this.session.on('signal:wb-draw', (event) => {
-        console.log('wb-draw signal received:', event);
-         // Ignore our own signals
-         if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
-         this.handleRemoteSignal(JSON.parse(event.data), event.from.connectionId);
+        // Ignore our own signals
+        if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
+        this.handleRemoteSignal(JSON.parse(event.data), event.from.connectionId);
       });
 
       this.session.on('signal:wb-clear', (event) => {
+        // Ignore our own signals
         if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
         this.clearCanvas(true); // true = skip sending signal back
       });
@@ -237,15 +236,11 @@ export class WhiteBoard extends LitElement {
   }
 
   clearCanvas(isRemote = false) {
-    console.log("Clearing canvas", this.session);
-    console.log("isRemote:", isRemote);
     this.ctx.fillStyle = "#fff";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.imageSelect.value = null;
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-    console.log("Canvas cleared: ",!isRemote && this.session);
     if (!isRemote && this.session) {
-      console.log("Sending clear signal");
       this.session.signal({ type: 'wb-clear', data: '1' });
     }
   }
@@ -270,25 +265,6 @@ export class WhiteBoard extends LitElement {
     link.click();
   }
 
-  // saveCanvas() {
-  //   const link = document.createElement('a');
-  //   link.download = `${Date.now()}.jpg`;
-  //   if (this.isSourceSelected) {
-  //     let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  //     const mergedData = this.mergeCanvases(this.snapshot, videoData);
-  //     this.mergedCtx.putImageData(mergedData, 0, 0);
-  //     link.href = this.mergedCanvas.toDataURL();
-  //   } else {
-  //     this.videoCtx.fillStyle = '#fff';
-  //     this.videoCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-  //     let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  //     const mergedData = this.mergeCanvases(this.snapshot, videoData);
-  //     this.mergedCtx.putImageData(mergedData, 0, 0);
-  //     link.href = this.mergedCanvas.toDataURL();
-  //   }
-  //   link.click();
-  // }
-
   mergeCanvases(top, bottom) {
     const tD = top.data;
     const bD = bottom.data;
@@ -307,32 +283,6 @@ export class WhiteBoard extends LitElement {
     }
     return bottom;
   }
-
-  // drawFrame = () => {
-  //   if (this.canvas.width !== 0 && this.canvas.height !== 0){
-  //     const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  //     this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
-  //     const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
-  //     const mergedData = this.mergeCanvases(whiteboardData, videoData);
-  //     this.mergedCtx.putImageData(mergedData, 0, 0);
-  //   }
-  //   this.rafId = requestAnimationFrame(this.drawFrame);
-  // }
-
-  // drawFrame = () => {
-  //   if (this.canvas.width !== 0 && this.canvas.height !== 0){
-  //     // Only merge for display if source is selected, otherwise we waste CPU
-  //     if(this.isSourceSelected) {
-  //         const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  //         this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
-  //         const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
-  //         const mergedData = this.mergeCanvases(whiteboardData, videoData);
-  //         this.mergedCtx.putImageData(mergedData, 0, 0);
-  //     }
-  //   }
-  //   this.rafId = requestAnimationFrame(this.drawFrame);
-  // }
-
 
   drawFrame = () => {
     if (this.canvas.width !== 0 && this.canvas.height !== 0){
@@ -366,7 +316,6 @@ export class WhiteBoard extends LitElement {
   }
 
   startDrawing(e) {
-    console.log("Starting drawing at: ", e.offsetX, e.offsetY);
     if(this.isResized){
       this.isResized = false;
     }
@@ -390,162 +339,13 @@ export class WhiteBoard extends LitElement {
     });
   }
 
-  // placeText(e) {
-  //   if (this.selectedTool === 'text') {
-  //     const textXPos = e.clientX;
-  //     const textYPos = e.clientY;
-  //     const textInput = document.createElement('input');
-
-  //     textInput.setAttribute('type', 'text');
-  //     textInput.style.position = 'fixed';
-  //     textInput.style.top = e.clientY + 'px';
-  //     textInput.style.left = e.clientX + 'px';
-  //     textInput.style.background = 'rgba(255,255,255, .5)';
-  //     textInput.style.width = '100px';
-  //     textInput.style.maxWidth = '200px';
-  //     textInput.style.border = '1px dashed red';
-  //     textInput.style.fontSize = '16px';
-  //     textInput.style.color = self.userColor;
-  //     textInput.style.fontFamily = 'Arial';
-  //     textInput.style.zIndex = '1001';
-
-  //     this.renderRoot?.querySelector('#canvas-container').appendChild(textInput);
-  //     textInput.focus();
-
-  //     textInput.addEventListener('keydown', (event) => {
-  //       if (event.which === 13) {
-  //         const { x, y } = this.renderRoot?.querySelector('#canvas').getBoundingClientRect();
-  //         this.ctx.font = `${this.strokeSize * 10}px serif`;
-  //         this.ctx.fillStyle = this.selectedColor;
-  //         this.ctx.fillText(textInput.value, textXPos - x, textYPos - y);
-  //         this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  //         textInput.remove();
-  //         return;
-  //       }
-  //     });
-  //     textInput.addEventListener('blur', () => {});
-  //   }
-
-  // }
-
-  // drawRectangle(e) {
-  //   this.ctx.strokeStyle = this.selectedColor;
-  //   if (!this.fillInColor.checked) {
-  //     this.ctx.strokeRect(
-  //       e.offsetX,
-  //       e.offsetY,
-  //       this.prevXpos - e.offsetX,
-  //       this.prevYpos - e.offsetY
-  //     );
-  //   } else {
-  //     this.ctx.fillRect(
-  //       e.offsetX,
-  //       e.offsetY,
-  //       this.prevXpos - e.offsetX,
-  //       this.prevYpos - e.offsetY
-  //     );
-  //   }
-  // }
-
-  // drawCircle(e) {
-  //   this.ctx.beginPath();
-  //   let radius = Math.sqrt(
-  //     Math.pow(this.prevXpos - e.offsetX, 2) + Math.pow(this.prevYpos - e.offsetY, 2)
-  //   );
-  //   this.ctx.arc(this.prevXpos, this.prevYpos, radius, 0, 2 * Math.PI);
-  //   this.ctx.stroke();
-  //   this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
-  // }
-
-  // drawTriangle(e) {
-  //   this.ctx.beginPath();
-  //   this.ctx.moveTo(this.prevXpos, this.prevYpos);
-  //   this.ctx.lineTo(e.offsetX, e.offsetY);
-  //   this.ctx.lineTo(this.prevXpos * 2 - e.offsetX, e.offsetY);
-  //   this.ctx.closePath();
-  //   this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
-  // }
-
-  // continueDrawing(e) {
-  //   if (!this.isDrawing) return;
-
-  //   // Restore snapshot to clear "preview" shapes from previous frame
-  //   this.ctx.putImageData(this.snapshot, 0, 0);
-
-  //   switch (this.selectedTool) {
-  //     case "pen":
-  //     case "eraser":
-  //       this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
-  //       this.ctx.lineTo(e.offsetX, e.offsetY);
-  //       this.ctx.stroke();
-  //       break;
-  //     case "rectangle":
-  //       this.drawRectangle(e);
-  //       break;
-  //     case "circle":
-  //       this.drawCircle(e);
-  //       break;
-  //     case "triangle":
-  //       this.drawTriangle(e);
-  //       break;
-  //   }
-
-  // }
-
-  // continueDrawing(e) {
-  //   if (!this.isDrawing) return;
-
-  //   console.log("Continuing drawing at: ", e.offsetX, e.offsetY);
-    
-  //   // Restore snapshot to clear "preview" shapes from previous frame
-  //   this.ctx.putImageData(this.snapshot, 0, 0);
-
-  //   const x = e.offsetX;
-  //   const y = e.offsetY;
-
-  //   switch (this.selectedTool) {
-  //     case "pen":
-  //     case "eraser":
-  //       this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
-  //       this.ctx.lineTo(x, y);
-  //       this.ctx.stroke();
-        
-  //       // 6. Send Throttled 'Move' Signal for Pen
-  //       // We send a segment from Prev to Curr to avoid gaps
-  //       this.throttledSignal({
-  //           t: 'move',
-  //           x: x / this.canvas.width,
-  //           y: y / this.canvas.height,
-  //           px: this.prevXpos / this.canvas.width,
-  //           py: this.prevYpos / this.canvas.height,
-  //           c: this.selectedTool === 'eraser' ? '#fff' : this.selectedColor,
-  //           s: this.strokeSize
-  //       });
-        
-  //       // Update prevPos explicitly for the next segment
-  //       this.prevXpos = x; 
-  //       this.prevYpos = y;
-  //       break;
-  //     case "rectangle":
-  //       this.drawRectangle(x, y, this.prevXpos, this.prevYpos);
-  //       break;
-  //     case "circle":
-  //       this.drawCircle(x, y, this.prevXpos, this.prevYpos);
-  //       break;
-  //     case "triangle":
-  //       this.drawTriangle(x, y, this.prevXpos, this.prevYpos);
-  //       break;
-  //   }
-  // }
-
-
   continueDrawing(e) {
     if (!this.isDrawing) return;
     
     const x = e.offsetX;
     const y = e.offsetY;
 
-    // FIX 1: Only restore the snapshot (wipe canvas) for Shapes.
+    // Only restore the snapshot (wipe canvas) for Shapes.
     // For Pen/Eraser, we want to KEEP the pixels we just drew.
     if (['rectangle', 'circle', 'triangle'].includes(this.selectedTool)) {
         this.ctx.putImageData(this.snapshot, 0, 0);
@@ -559,7 +359,7 @@ export class WhiteBoard extends LitElement {
         this.ctx.lineCap = "round";
         this.ctx.lineJoin = "round";
         
-        // FIX 2: Explicitly start a new path for this segment.
+        // Explicitly start a new path for this segment.
         // This prevents 'handleRemoteSignal' from breaking our path state.
         this.ctx.beginPath();
         this.ctx.moveTo(this.prevXpos, this.prevYpos);
@@ -595,18 +395,12 @@ export class WhiteBoard extends LitElement {
     }
   }
 
-  // stopDrawing() {
-  //   this.isDrawing = false;
-  //   this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  // }
 
   stopDrawing(e) {
     if(!this.isDrawing) return; // safety
     const x = e.offsetX;
     const y = e.offsetY;
     
-    console.log("Stopping drawing at: ", x, y);
-
     // Send Final Shape Signal
     // We do not send real-time rectangle/circle dragging to save bandwidth.
     // We only send the final shape.
@@ -716,7 +510,6 @@ export class WhiteBoard extends LitElement {
 
   sendSignal(data) {
     if (this.session) {
-      console.log("Sending signal: ", data);
       this.session.signal({
         type: 'wb-draw',
         data: JSON.stringify(data)
@@ -725,116 +518,6 @@ export class WhiteBoard extends LitElement {
       });
     }
   }
-
-  // handleRemoteSignal(data) {
-  //   console.log("Received signal: ", data);
-  //   const w = this.canvas.width;
-  //   const h = this.canvas.height;
-    
-  //   // Denormalize coordinates
-  //   const x = data.x * w;
-  //   const y = data.y * h;
-  //   const px = data.px * w;
-  //   const py = data.py * h;
-
-  //   // Save current context settings
-  //   this.ctx.save();
-  //   this.ctx.strokeStyle = data.c;
-  //   this.ctx.fillStyle = data.c;
-  //   this.ctx.lineWidth = data.s;
-
-  //   if (data.t === 'down') {
-  //       this.ctx.beginPath();
-  //       this.ctx.moveTo(x, y);
-  //   } 
-  //   else if (data.t === 'move') {
-  //       this.ctx.beginPath();
-  //       this.ctx.moveTo(px, py); // Draw segment from previous to current
-  //       this.ctx.lineTo(x, y);
-  //       this.ctx.stroke();
-  //       this.ctx.closePath();
-  //   }
-  //   else if (data.t === 'shape') {
-  //       const tempCheck = this.fillInColor.checked;
-  //       this.fillInColor.checked = data.f; // Temporarily switch fill state
-  //       if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
-  //       if(data.tl === 'circle') this.drawCircle(x, y, px, py);
-  //       if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
-  //       this.fillInColor.checked = tempCheck; // Restore
-  //   }
-  //   else if (data.t === 'text') {
-  //       this.ctx.font = `${data.s * 10}px serif`;
-  //       this.ctx.fillText(data.txt, x, y);
-  //   }
-
-  //   this.ctx.restore();
-
-  //   // CRITICAL FIX:
-  //   // Because 'continueDrawing' relies on putImageData(snapshot),
-  //   // we must update the snapshot immediately after a remote draw.
-  //   // If we don't, the local user's next mouse move will wipe the remote drawing.
-  //   this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  // }
-
-  // handleRemoteSignal(data) {
-  //   const w = this.canvas.width;
-  //   const h = this.canvas.height;
-    
-  //   // Denormalize coordinates
-  //   const x = data.x * w;
-  //   const y = data.y * h;
-  //   const px = data.px * w;
-  //   const py = data.py * h;
-
-  //   this.ctx.save();
-  //   this.ctx.strokeStyle = data.c;
-  //   this.ctx.fillStyle = data.c;
-  //   this.ctx.lineWidth = data.s;
-  //   this.ctx.lineCap = "round"; // IMPORTANT: Makes segments blend better
-  //   this.ctx.lineJoin = "round";
-
-  //   if (data.t === 'down') {
-  //       this.ctx.beginPath();
-  //       this.ctx.moveTo(x, y);
-  //       // We just move to the start point, no drawing yet
-  //   } 
-  //   else if (data.t === 'move') {
-  //       this.ctx.beginPath();
-  //       this.ctx.moveTo(px, py);
-
-  //       // --- SMOOTHING MAGIC ---
-  //       // Instead of a straight line to (x,y), we calculate the midpoint
-  //       // and curve towards it. This removes the jagged "polygon" look.
-        
-  //       const midPointX = (px + x) / 2;
-  //       const midPointY = (py + y) / 2;
-        
-  //       this.ctx.quadraticCurveTo(px, py, midPointX, midPointY);
-  //       this.ctx.lineTo(x, y); 
-  //       // -----------------------
-        
-  //       this.ctx.stroke();
-  //       this.ctx.closePath();
-  //   }
-  //   else if (data.t === 'shape') {
-  //       const tempCheck = this.fillInColor.checked;
-  //       this.fillInColor.checked = data.f; 
-  //       if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
-  //       if(data.tl === 'circle') this.drawCircle(x, y, px, py);
-  //       if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
-  //       this.fillInColor.checked = tempCheck;
-  //   }
-  //   else if (data.t === 'text') {
-  //       this.ctx.font = `${data.s * 10}px serif`;
-  //       this.ctx.fillText(data.txt, x, y);
-  //   }
-
-  //   this.ctx.restore();
-
-  //   // Update the snapshot so the next frame includes this new line
-  //   this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-  // }
-
 
   handleRemoteSignal(data, fromConnectionId) {
     const w = this.canvas.width;
@@ -856,7 +539,7 @@ export class WhiteBoard extends LitElement {
         this.remoteCursors[fromConnectionId] = { x: x, y: y };
     } 
     else if (data.t === 'move') {
-        // FIX 3: Retrieve the LAST position we saw for this specific user
+        // Retrieve the LAST position we saw for this specific user
         const lastPos = this.remoteCursors[fromConnectionId];
         
         if (lastPos) {
@@ -922,7 +605,6 @@ export class WhiteBoard extends LitElement {
     this.videoEl.srcObject = null;
     this.videoCtx.fillStyle = '#fff';
     this.videoCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
   }
 
   startSharing() {
