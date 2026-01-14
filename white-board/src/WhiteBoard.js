@@ -1,15 +1,28 @@
 import { LitElement, html, css } from "lit";
 
+function throttle(func, limit) {
+  let inThrottle;
+  return function() {
+    const args = arguments;
+    const context = this;
+    if (!inThrottle) {
+      func.apply(context, args);
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
+    }
+  }
+}
+
 export class WhiteBoard extends LitElement {
   static get properties() {
     return {
+      session: { type: Object },
+      token: { type: String},
       selectedTool: { type: String },
       strokeSize: { type: Number },
       isSourceSelected: { type: Boolean },
       isSharing: { type: Boolean },
       publisher: {},
-      session: {},
-      token: {},
       properties: { type: Object },
       text: { type: Object },
     }
@@ -49,6 +62,8 @@ export class WhiteBoard extends LitElement {
   }
   constructor() {
     super();
+    this.session = {};
+    this.token = '';
     this.count = 0;
     this.canvas;
     this.ctx;
@@ -94,6 +109,10 @@ export class WhiteBoard extends LitElement {
 
     this.isResized = false;
     this.resizeObserver = new ResizeObserver(this._handleResize);
+    this.throttledSignal = throttle(this.sendSignal, 30); // 30ms throttle
+    // Track the last known position of every remote user
+    // Format: { "connectionId": { x: 0.5, y: 0.5 } }
+    this.remoteCursors = {};
   }
 
 
@@ -122,6 +141,18 @@ export class WhiteBoard extends LitElement {
   updated(changedProperties) {
     if(changedProperties.get("session")){
       this.session.connect(this.token);
+
+      this.session.on('signal:wb-draw', (event) => {
+        // Ignore our own signals
+        if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
+        this.handleRemoteSignal(JSON.parse(event.data), event.from.connectionId);
+      });
+
+      this.session.on('signal:wb-clear', (event) => {
+        // Ignore our own signals
+        if (this.session.connection && event.from.connectionId === this.session.connection.connectionId) return;
+        this.clearCanvas(true); // true = skip sending signal back
+      });
     }
   }
 
@@ -204,29 +235,33 @@ export class WhiteBoard extends LitElement {
     img.src = path;
   }
 
-  clearCanvas() {
+  clearCanvas(isRemote = false) {
     this.ctx.fillStyle = "#fff";
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.imageSelect.value = null;
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    if (!isRemote && this.session) {
+      this.session.signal({ type: 'wb-clear', data: '1' });
+    }
   }
 
   saveCanvas() {
     const link = document.createElement('a');
     link.download = `${Date.now()}.jpg`;
-    if (this.isSourceSelected) {
-      let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-      const mergedData = this.mergeCanvases(this.snapshot, videoData);
-      this.mergedCtx.putImageData(mergedData, 0, 0);
-      link.href = this.mergedCanvas.toDataURL();
-    } else {
+    
+    // Reset video ctx if needed
+    if (!this.isSourceSelected) {
       this.videoCtx.fillStyle = '#fff';
       this.videoCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-      const mergedData = this.mergeCanvases(this.snapshot, videoData);
-      this.mergedCtx.putImageData(mergedData, 0, 0);
-      link.href = this.mergedCanvas.toDataURL();
     }
+    
+    let videoData = this.videoCtx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    // Use current state of canvas (handled by logic below) instead of old snapshot
+    const currentBoard = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+    
+    const mergedData = this.mergeCanvases(currentBoard, videoData);
+    this.mergedCtx.putImageData(mergedData, 0, 0);
+    link.href = this.mergedCanvas.toDataURL();
     link.click();
   }
 
@@ -251,12 +286,32 @@ export class WhiteBoard extends LitElement {
 
   drawFrame = () => {
     if (this.canvas.width !== 0 && this.canvas.height !== 0){
+      
+      // 1. Always get the whiteboard drawing
       const whiteboardData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
-      this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
+      
+      // 2. Prepare the background (Video or White)
+      if(this.isSourceSelected) {
+          // Draw the live video feed
+          this.videoCtx.drawImage(this.videoEl, 0, 0, this.videoCanvas.width, this.videoCanvas.height);
+      } else {
+          // Ensure background is solid white if no video is selected
+          // (This is crucial so we don't merge transparency on transparency)
+          this.videoCtx.fillStyle = '#fff';
+          this.videoCtx.fillRect(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+      }
+
+      // 3. Get the background data
       const videoData = this.videoCtx.getImageData(0, 0, this.videoCanvas.width, this.videoCanvas.height);
+      
+      // 4. Merge them (Whiteboard + Background)
       const mergedData = this.mergeCanvases(whiteboardData, videoData);
+      
+      // 5. Paint the result to the Publisher's canvas
       this.mergedCtx.putImageData(mergedData, 0, 0);
     }
+    
+    // Loop
     this.rafId = requestAnimationFrame(this.drawFrame);
   }
 
@@ -274,6 +329,131 @@ export class WhiteBoard extends LitElement {
     if (!this.isSourceSelected) {
       this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height)
     }
+    this.sendSignal({
+      t: 'down',
+      x: e.offsetX / this.canvas.width,
+      y: e.offsetY / this.canvas.height,
+      c: this.selectedColor,
+      s: this.strokeSize,
+      tl: this.selectedTool
+    });
+  }
+
+  continueDrawing(e) {
+    if (!this.isDrawing) return;
+    
+    const x = e.offsetX;
+    const y = e.offsetY;
+
+    // Only restore the snapshot (wipe canvas) for Shapes.
+    // For Pen/Eraser, we want to KEEP the pixels we just drew.
+    if (['rectangle', 'circle', 'triangle'].includes(this.selectedTool)) {
+        this.ctx.putImageData(this.snapshot, 0, 0);
+    }
+
+    switch (this.selectedTool) {
+      case "pen":
+      case "eraser":
+        this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
+        this.ctx.lineWidth = this.strokeSize;
+        this.ctx.lineCap = "round";
+        this.ctx.lineJoin = "round";
+        
+        // Explicitly start a new path for this segment.
+        // This prevents 'handleRemoteSignal' from breaking our path state.
+        this.ctx.beginPath();
+        this.ctx.moveTo(this.prevXpos, this.prevYpos);
+        this.ctx.lineTo(x, y);
+        this.ctx.stroke();
+        this.ctx.closePath();
+        
+        // Send the signal (Throttled)
+        this.throttledSignal({
+            t: 'move',
+            x: x / this.canvas.width,
+            y: y / this.canvas.height,
+            // We NO LONGER rely on sending 'px/py' here for connectivity.
+            // The receiver will handle the gaps.
+            c: this.selectedTool === 'eraser' ? '#fff' : this.selectedColor,
+            s: this.strokeSize
+        });
+        
+        // Update prevPos for the next segment
+        this.prevXpos = x; 
+        this.prevYpos = y;
+        break;
+        
+      case "rectangle":
+        this.drawRectangle(x, y, this.prevXpos, this.prevYpos);
+        break;
+      case "circle":
+        this.drawCircle(x, y, this.prevXpos, this.prevYpos);
+        break;
+      case "triangle":
+        this.drawTriangle(x, y, this.prevXpos, this.prevYpos);
+        break;
+    }
+  }
+
+
+  stopDrawing(e) {
+    if(!this.isDrawing) return; // safety
+    const x = e.offsetX;
+    const y = e.offsetY;
+    
+    // Send Final Shape Signal
+    // We do not send real-time rectangle/circle dragging to save bandwidth.
+    // We only send the final shape.
+    if (['rectangle', 'circle', 'triangle'].includes(this.selectedTool)) {
+        this.sendSignal({
+            t: 'shape',
+            tl: this.selectedTool,
+            x: x / this.canvas.width,
+            y: y / this.canvas.height,
+            px: this.prevXpos / this.canvas.width,
+            py: this.prevYpos / this.canvas.height,
+            c: this.selectedColor,
+            s: this.strokeSize,
+            f: this.fillInColor.checked
+        });
+    } else {
+        // Pen Up signal
+        this.sendSignal({ t: 'up' });
+    }
+
+    this.isDrawing = false;
+    // Save state
+    this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  // --- DRAWING HELPERS ---
+  
+  drawRectangle(x, y, startX, startY) {
+    this.ctx.lineWidth = this.strokeSize; // Ensure context is current
+    if (!this.fillInColor.checked) {
+      this.ctx.strokeRect(x, y, startX - x, startY - y);
+    } else {
+      this.ctx.fillRect(x, y, startX - x, startY - y);
+    }
+  }
+
+  drawCircle(x, y, startX, startY) {
+    this.ctx.lineWidth = this.strokeSize;
+    this.ctx.beginPath();
+    let radius = Math.sqrt(Math.pow(startX - x, 2) + Math.pow(startY - y, 2));
+    this.ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+    this.ctx.stroke();
+    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
+  }
+
+  drawTriangle(x, y, startX, startY) {
+    this.ctx.lineWidth = this.strokeSize;
+    this.ctx.beginPath();
+    this.ctx.moveTo(startX, startY);
+    this.ctx.lineTo(x, y);
+    this.ctx.lineTo(startX * 2 - x, y);
+    this.ctx.closePath();
+    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
   }
 
   placeText(e) {
@@ -291,7 +471,7 @@ export class WhiteBoard extends LitElement {
       textInput.style.maxWidth = '200px';
       textInput.style.border = '1px dashed red';
       textInput.style.fontSize = '16px';
-      textInput.style.color = self.userColor;
+      textInput.style.color = this.selectedColor;
       textInput.style.fontFamily = 'Arial';
       textInput.style.zIndex = '1001';
 
@@ -301,83 +481,110 @@ export class WhiteBoard extends LitElement {
       textInput.addEventListener('keydown', (event) => {
         if (event.which === 13) {
           const { x, y } = this.renderRoot?.querySelector('#canvas').getBoundingClientRect();
+          const relativeX = textXPos - x;
+          const relativeY = textYPos - y;
+          
           this.ctx.font = `${this.strokeSize * 10}px serif`;
           this.ctx.fillStyle = this.selectedColor;
-          this.ctx.fillText(textInput.value, textXPos - x, textYPos - y);
+          this.ctx.fillText(textInput.value, relativeX, relativeY);
+          
+          // Send Text Signal
+          this.sendSignal({
+              t: 'text',
+              txt: textInput.value,
+              x: relativeX / this.canvas.width,
+              y: relativeY / this.canvas.height,
+              c: this.selectedColor,
+              s: this.strokeSize
+          });
+
           this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
           textInput.remove();
-          return;
         }
       });
-      textInput.addEventListener('blur', () => {});
-    }
-
-  }
-
-  drawRectangle(e) {
-    this.ctx.strokeStyle = this.selectedColor;
-    if (!this.fillInColor.checked) {
-      this.ctx.strokeRect(
-        e.offsetX,
-        e.offsetY,
-        this.prevXpos - e.offsetX,
-        this.prevYpos - e.offsetY
-      );
-    } else {
-      this.ctx.fillRect(
-        e.offsetX,
-        e.offsetY,
-        this.prevXpos - e.offsetX,
-        this.prevYpos - e.offsetY
-      );
+      textInput.addEventListener('blur', () => textInput.remove());
     }
   }
 
-  drawCircle(e) {
-    this.ctx.beginPath();
-    let radius = Math.sqrt(
-      Math.pow(this.prevXpos - e.offsetX, 2) + Math.pow(this.prevYpos - e.offsetY, 2)
-    );
-    this.ctx.arc(this.prevXpos, this.prevYpos, radius, 0, 2 * Math.PI);
-    this.ctx.stroke();
-    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
+  // --- SIGNALING CORE ---
+
+  sendSignal(data) {
+    if (this.session) {
+      this.session.signal({
+        type: 'wb-draw',
+        data: JSON.stringify(data)
+      }, (error) => {
+        if (error) console.error("Signal error: " + error.message);
+      });
+    }
   }
 
-  drawTriangle(e) {
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.prevXpos, this.prevYpos);
-    this.ctx.lineTo(e.offsetX, e.offsetY);
-    this.ctx.lineTo(this.prevXpos * 2 - e.offsetX, e.offsetY);
-    this.ctx.closePath();
-    this.fillInColor.checked ? this.ctx.fill() : this.ctx.stroke();
-  }
+  handleRemoteSignal(data, fromConnectionId) {
+    const w = this.canvas.width;
+    const h = this.canvas.height;
+    
+    // Current target coordinates
+    const x = data.x * w;
+    const y = data.y * h;
 
-  continueDrawing(e) {
-    if (!this.isDrawing) return;
-    this.ctx.putImageData(this.snapshot, 0, 0);
+    this.ctx.save();
+    this.ctx.strokeStyle = data.c;
+    this.ctx.fillStyle = data.c;
+    this.ctx.lineWidth = data.s;
+    this.ctx.lineCap = "round";
+    this.ctx.lineJoin = "round";
 
-    switch (this.selectedTool) {
-      case "pen":
-      case "eraser":
-        this.ctx.strokeStyle = this.selectedTool === 'eraser' ? '#fff' : this.selectedColor;
-        this.ctx.lineTo(e.offsetX, e.offsetY);
-        this.ctx.stroke();
-        break;
-      case "rectangle":
-        this.drawRectangle(e);
-        break;
-      case "circle":
-        this.drawCircle(e);
-        break;
-      case "triangle":
-        this.drawTriangle(e);
-        break;
+    if (data.t === 'down') {
+        // Just store the starting point. Don't draw yet.
+        this.remoteCursors[fromConnectionId] = { x: x, y: y };
+    } 
+    else if (data.t === 'move') {
+        // Retrieve the LAST position we saw for this specific user
+        const lastPos = this.remoteCursors[fromConnectionId];
+        
+        if (lastPos) {
+            this.ctx.beginPath();
+            this.ctx.moveTo(lastPos.x, lastPos.y);
+            
+            // Quadratic Curve for smoothness
+            const midPointX = (lastPos.x + x) / 2;
+            const midPointY = (lastPos.y + y) / 2;
+            this.ctx.quadraticCurveTo(lastPos.x, lastPos.y, midPointX, midPointY);
+            
+            this.ctx.lineTo(x, y); 
+            this.ctx.stroke();
+            this.ctx.closePath();
+        }
+        
+        // Update their position for the next frame
+        this.remoteCursors[fromConnectionId] = { x: x, y: y };
+    }
+    else if (data.t === 'up') {
+        // User finished drawing, clear their cursor history
+        delete this.remoteCursors[fromConnectionId];
+    }
+    else if (data.t === 'shape') {
+        // ... (existing shape logic) ...
+        const tempCheck = this.fillInColor.checked;
+        this.fillInColor.checked = data.f; 
+        // Note: For shapes, we still rely on 'px' sent in data because shapes aren't throttled
+        // But we need to denormalize px here if you kept it in the payload
+        const px = data.px * w; 
+        const py = data.py * h;
+        
+        if(data.tl === 'rectangle') this.drawRectangle(x, y, px, py);
+        if(data.tl === 'circle') this.drawCircle(x, y, px, py);
+        if(data.tl === 'triangle') this.drawTriangle(x, y, px, py);
+        this.fillInColor.checked = tempCheck;
+    }
+    else if (data.t === 'text') {
+        this.ctx.font = `${data.s * 10}px serif`;
+        this.ctx.fillText(data.txt, x, y);
     }
 
-  }
+    this.ctx.restore();
 
-  stopDrawing() {
-    this.isDrawing = false;
+    // Update snapshot to bake in the remote changes
     this.snapshot = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
   }
 
@@ -393,12 +600,11 @@ export class WhiteBoard extends LitElement {
 
   clearSource() {
     const tracks = this.videoEl.srcObject.getTracks();
-    tracks.forEach((track) => track.stop());
+    if(tracks) tracks.forEach((track) => track.stop());
     this.isSourceSelected = false;
     this.videoEl.srcObject = null;
     this.videoCtx.fillStyle = '#fff';
     this.videoCtx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
   }
 
   startSharing() {
@@ -488,7 +694,7 @@ export class WhiteBoard extends LitElement {
           @change="${this.selectImage}"
         />
         &nbsp; | &nbsp;
-        <button part="tools button clear"id="clear" @click="${this.clearCanvas}">${this.text.clear}</button>
+        <button part="tools button clear"id="clear" @click="${() => this.clearCanvas(false)}">${this.text.clear}</button>
         <button part="tools button save" id="save" @click="${this.saveCanvas}">${this.text.save}</button>
         <br />
         ${this.displaySourceButton()}
