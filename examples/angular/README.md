@@ -26,7 +26,7 @@ schemas: [CUSTOM_ELEMENTS_SCHEMA]
 ### 2. Get the Client SDK
 place into your index.html
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@vonage/client-sdk-video@latest/dist/js/opentok.min.js"></script>
+<script src="https://video.standard.vonage.com/v2/js/opentok.min.js"></script>
 ```
 
 OR if you install the library using `npm install --save @vonage/client-sdk-video`
