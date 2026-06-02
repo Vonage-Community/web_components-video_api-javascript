@@ -33,7 +33,7 @@ export default defineConfig({
 ### 2. Get the Client SDK
 place into your index.html
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@vonage/client-sdk-video@latest/dist/js/opentok.min.js"></script>
+<script src="https://video.standard.vonage.com/v2/js/opentok.min.js"></script>
 ```
 
 ### 3. Get the Web Components
