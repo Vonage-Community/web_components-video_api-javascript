@@ -1,4 +1,4 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, ViewChild, ElementRef, OnInit, AfterViewInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef, signal, inject, ChangeDetectorRef, CUSTOM_ELEMENTS_SCHEMA} from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import '@vonage/video-publisher/video-publisher.js';
 import '@vonage/video-subscribers/video-subscribers.js';
@@ -12,7 +12,7 @@ import '@vonage/video-subscribers/video-subscribers.js';
       <section id="publisher-container">
         <fieldset>
           <legend>Publisher</legend>
-          <video-publisher #publisher [session]="session" [token]="token" [properties]="pubProperties"></video-publisher>
+          <video-publisher #publisher [session]="session()" [token]="token()" [properties]="pubProperties"></video-publisher>
         </fieldset>
         <button type="button" (click)="toggleVideo()">toggle Video</button>
         <button type="button" (click)="toggleAudio()">toggle Audio</button>
@@ -20,7 +20,7 @@ import '@vonage/video-subscribers/video-subscribers.js';
       <section id="subscribers-container">
         <fieldset>
           <legend>Subscribers</legend>
-          <video-subscribers #subscribers [session]="session" [token]="token"></video-subscribers>
+          <video-subscribers #subscribers [session]="session()" [token]="token()"></video-subscribers>
         </fieldset>
       </section>
     </div>
@@ -61,26 +61,32 @@ export class App implements OnInit, AfterViewInit {
   serverURL: string|undefined;
   applicationId = 'YOUR_APPLICATION_ID';
   sessionId = 'YOUR_SESSION_ID';
-  token = 'YOUR_TOKEN';
+  // token = 'YOUR_TOKEN';
+  token = signal('YOUR_TOKEN');
+  session = signal<any>({});
   // @ts-ignore
   OT = window.OT;
-  session = {};
+  // session = {};
   pubProperties = {
     fitMode: 'cover',
     height: '100%',
     resolution: '1920x1080',
     videoContentHint: 'detail',
     width: '100%',
+    publishAudio: false
   };
 
   @ViewChild('publisher') publisherComponent!: ElementRef;
   @ViewChild('subscribers') subscribersComponent!: ElementRef;
 
+  private cdr = inject(ChangeDetectorRef);
+
   initializeSession() {
     // Initialize a Vonage Video Session object
-    this.session = this.OT.initSession(this.applicationId, this.sessionId);
+    const newSession = this.OT.initSession(this.applicationId, this.sessionId);
+    this.session.set(newSession);
   }
-  
+
   toggleVideo() {
     this.publisherComponent?.nativeElement.toggleVideo();
   }
@@ -92,23 +98,25 @@ export class App implements OnInit, AfterViewInit {
   ngOnInit() {
     console.log('ngOnInit');
   }
-  
+
   ngAfterViewInit() {
-    if (this.serverURL){
+    if (this.serverURL) {
       console.log("serverURL: ", this.serverURL);
       const fetchCredentials = async () => {
         try {
-          const response = await fetch(this.serverURL+ '/session');
+          const response = await fetch(this.serverURL + '/session');
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           const credentials = await response.json();
-          console.log("credentials: ",credentials);
+          console.log("credentials: ", credentials);
           this.applicationId = credentials.applicationId;
           this.sessionId = credentials.sessionId;
-          this.token = credentials.token;
+          // this.token = credentials.token;
+          this.token.set(credentials.token);
           this.initializeSession();
-        } catch (err:any) {
+          this.cdr.detectChanges();
+        } catch (err: any) {
           console.error('Error getting credentials: ', err.message);
         }
       };
@@ -118,7 +126,7 @@ export class App implements OnInit, AfterViewInit {
     }
 
   }
-  
+
 }
 
 bootstrapApplication(App);
