@@ -61,7 +61,6 @@ export class App implements OnInit, AfterViewInit {
   serverURL: string|undefined;
   applicationId = 'YOUR_APPLICATION_ID';
   sessionId = 'YOUR_SESSION_ID';
-  // token = 'YOUR_TOKEN';
   token = signal('YOUR_TOKEN');
   session = signal<any>({});
   // @ts-ignore
