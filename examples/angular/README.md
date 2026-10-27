@@ -58,7 +58,7 @@ where you want them to show up in your app
 for ex:
 ```html
 <video-publisher #publisher [session]="session()" [token]="token()" [properties]="pubProperties"></video-publisher>
-<video-subscribers #subscribers [session]="session()" [token]="token()"></video-subscribers>
+<video-subscribers #subscribers [session]="session()" [token]="token()" [properties]="subProperties"></video-subscribers>
 ```
 
 ### 5. Get references to the Web Components using `ViewChild` and `ElementRef`
